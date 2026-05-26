@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, ArrowRight, BellOff, Check, Trash2 } from "lucide-react";
 import { useNotifications, formatRelative } from "./notifications";
-import AnxietyChick from "./AnxietyChick";
+import { supabase } from "@/lib/supabase";
 import imgJournaling from "@/imports/Support/4cb91f48acd6e9f10f46f5b752c07482e23858b5.png";
 import imgNearby from "@/imports/Support/ab093e6ffeb390cf38f1e75977bb7c3bdcfd4f6c.png";
 import imgEmergency from "@/imports/Support/c17f0039912ca00b8476ed9dc75efc82ed8164c9.png";
@@ -16,23 +16,79 @@ const QUICK: { key: QuickKey; label: string; img: string; overlay: number }[] = 
 
 const MOODS = [
   { key: "angry", label: "Angry", emoji: "😠", color: "#FADCD9" },
-  { key: "anxious", label: "Anxiety", emoji: "chick", color: "#FBE9B7", active: true },
+  { key: "anxious", label: "Anxious", emoji: "😥", color: "#FBE9B7", active: true },
   { key: "sad", label: "Sad", emoji: "😢", color: "#DCE4F5" },
   { key: "neutral", label: "Neutral", emoji: "😐", color: "#EDE6DD" },
   { key: "happy", label: "Happy", emoji: "🙂", color: "#DCEBC6" },
 ];
 
+function getTimeBasedGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning";
+  if (hour < 18) return "Good Afternoon";
+  return "Good Evening";
+}
+
 export default function Home({
   onQuickOpen,
   onStartChat,
+  session,
+  onMoodSaved,
 }: {
   onQuickOpen?: (k: QuickKey) => void;
   onStartChat?: () => void;
+  session?: any;
+  onMoodSaved?: () => void;
 }) {
-  const [selected, setSelected] = useState("anxious");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [todayMood, setTodayMood] = useState<string | null>(null);
+  const [loadingMood, setLoadingMood] = useState(true);
   const { enabled, items, unread, push, markAllRead, clear } = useNotifications();
   const [openPanel, setOpenPanel] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Generate dynamic greeting
+  const username = session?.user?.user_metadata?.username;
+  const greetingText = username 
+    ? `Hi, ${username}!` 
+    : `${getTimeBasedGreeting()}!`;
+  const avatarInitial = username ? username[0].toUpperCase() : "U";
+
+  // Fetch today's mood on mount
+  useEffect(() => {
+    const fetchTodayMood = async () => {
+      if (!session?.user?.id) {
+        setLoadingMood(false);
+        return;
+      }
+
+      try {
+        const dateLogged = new Date().toISOString().split('T')[0];
+        
+        const { data, error } = await supabase
+          .from('mood_entries')
+          .select('mood')
+          .eq('user_id', session.user.id)
+          .eq('date_logged', dateLogged)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching today mood:', error);
+        }
+
+        if (data) {
+          setTodayMood(data.mood);
+          setSelected(data.mood);
+        }
+      } catch (error) {
+        console.error('Error fetching today mood:', error);
+      } finally {
+        setLoadingMood(false);
+      }
+    };
+
+    fetchTodayMood();
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (!openPanel) return;
@@ -47,9 +103,41 @@ export default function Home({
     if (openPanel && unread > 0) markAllRead();
   }, [openPanel, unread, markAllRead]);
 
-  const onMood = (key: string, label: string) => {
+  const onMood = async (key: string, label: string) => {
     setSelected(key);
-    push({ source: "home", title: "Mood checked in", body: `You logged feeling ${label.toLowerCase()}.` });
+    
+    if (!session?.user?.id) {
+      push({ source: "home", title: "Error", body: "Please sign in to log your mood." });
+      return;
+    }
+
+    try {
+      const dateLogged = new Date().toISOString().split('T')[0];
+      
+      const { error } = await supabase
+        .from('mood_entries')
+        .upsert(
+          {
+            user_id: session.user.id,
+            mood: key,
+            date_logged: dateLogged,
+          },
+          {
+            onConflict: 'user_id,date_logged',
+          }
+        );
+
+      if (error) throw error;
+
+      setTodayMood(key);
+      
+      push({ source: "home", title: "Mood checked in", body: `You logged feeling ${label.toLowerCase()}.` });
+      
+      onMoodSaved?.();
+    } catch (error) {
+      console.error('Error saving mood:', error);
+      push({ source: "home", title: "Error", body: "Failed to save your mood. Please try again." });
+    }
   };
 
   return (
@@ -57,10 +145,10 @@ export default function Home({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-full bg-gradient-to-br from-[#A7C7E7] to-[#7A9E7E] grid place-items-center text-white font-['Poppins'] font-bold text-sm">
-            L
+            {avatarInitial}
           </div>
           <span className="font-['Poppins'] font-semibold text-[#1f1f1f] text-base">
-            Hi Layla!
+            {greetingText}
           </span>
         </div>
         <div className="relative" ref={panelRef}>
@@ -151,6 +239,7 @@ export default function Home({
               <button
                 key={m.key}
                 onClick={() => onMood(m.key, m.label)}
+                disabled={loadingMood}
                 className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all ${
                   isActive ? "ring-2 ring-offset-1" : "hover:bg-[#F8F9FC]"
                 }`}
@@ -159,11 +248,7 @@ export default function Home({
                   ...(isActive ? ({ "--tw-ring-color": m.color } as React.CSSProperties) : {}),
                 }}
               >
-                {m.emoji === "chick" ? (
-                  <AnxietyChick className="size-8 sm:size-9" />
-                ) : (
-                  <span className="text-2xl sm:text-3xl leading-none">{m.emoji}</span>
-                )}
+                <span className="text-2xl sm:text-3xl leading-none">{m.emoji}</span>
                 <span
                   className={`font-['Nunito'] text-xs ${
                     isActive ? "text-[#1f1f1f] font-semibold" : "text-[#9b9b9b]"
