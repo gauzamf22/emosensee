@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 type Mode = "login" | "signup";
 
@@ -119,8 +120,54 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const isSignup = mode === "signup";
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (isSignup) {
+        // Register new user
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              username,
+            },
+          },
+        });
+
+        if (signUpError) throw signUpError;
+
+        if (data.user) {
+          // Auto-login after signup
+          onAuthed();
+        }
+      } else {
+        // Login existing user
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) throw signInError;
+
+        if (data.user) {
+          onAuthed();
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#F6F7FB] flex items-center justify-center px-4 py-10">
@@ -130,13 +177,7 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
             {isSignup ? "Sign Up" : "Login"}
           </h1>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              onAuthed();
-            }}
-            className="flex flex-col gap-5"
-          >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <Field
               label="Email"
               type="email"
@@ -154,13 +195,20 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
             )}
             <PasswordField value={password} onChange={setPassword} showForgot={!isSignup} />
 
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
+              disabled={loading}
               className={`h-11 rounded-[10px] font-['Inter'] font-medium text-white text-lg transition-colors ${
                 isSignup ? "bg-[#4355FF] hover:bg-[#3445e6]" : "bg-[#0063F3] hover:bg-[#0052cc]"
-              }`}
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              Next
+              {loading ? "Loading..." : "Next"}
             </button>
 
             <div className="text-center font-['Inter'] font-medium text-[#4355FF]">or</div>

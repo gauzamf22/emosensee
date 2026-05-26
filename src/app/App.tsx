@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   ChevronDown,
@@ -25,6 +25,7 @@ import Logo from "./Logo";
 import { motion } from "motion/react";
 import { NotificationProvider, useNotifications } from "./notifications";
 import AnxietyChick from "./AnxietyChick";
+import { supabase } from "../lib/supabase";
 
 type SubPage =
   | "journaling"
@@ -265,6 +266,15 @@ function AppInner() {
   const [authed, setAuthed] = useState(false);
   const [active, setActive] = useState<NavKey>("home");
   const [sub, setSub] = useState<SubPage>(null);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setAuthed(true);
+      }
+    });
+  }, []);
 
   if (!splashDone) {
     return <Splash onDone={() => setSplashDone(true)} />;
