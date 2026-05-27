@@ -1,5 +1,4 @@
 const journalService = require('../services/journalService');
-const insightService = require('../services/insightService');
 
 const create = async (req, res, next) => {
   try {
@@ -9,12 +8,6 @@ const create = async (req, res, next) => {
     }
 
     const data = await journalService.createJournal(req.user.id, title, description, req.token);
-    
-    // Trigger insight generation in background (fire-and-forget)
-    const language = req.headers['accept-language'] || 'id-ID';
-    insightService.generateInsight(req.user.id, req.token, language)
-      .catch(err => console.error('Background insight generation failed:', err));
-    
     res.status(201).json({ success: true, message: 'Jurnal berhasil dibuat', data });
   } catch (error) {
     next(error);
@@ -23,16 +16,8 @@ const create = async (req, res, next) => {
 
 const getAll = async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = parseInt(req.query.offset) || 0;
-    
-    const result = await journalService.getAllJournals(req.user.id, req.token, limit, offset);
-    res.status(200).json({ 
-      success: true, 
-      message: 'Berhasil mengambil semua jurnal', 
-      data: result.journals,
-      pagination: result.pagination
-    });
+    const data = await journalService.getAllJournals(req.user.id, req.token);
+    res.status(200).json({ success: true, message: 'Berhasil mengambil semua jurnal', data });
   } catch (error) {
     next(error);
   }

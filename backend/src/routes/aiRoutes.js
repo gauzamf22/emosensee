@@ -3,10 +3,10 @@ const router = express.Router();
 const aiController = require('../controllers/aiController');
 const requireAuth = require('../middlewares/authMiddleware');
 
-// GET /api/ai/memory - Get user's conversation memory
-router.get('/memory', requireAuth, aiController.getMemory);
+router.use(requireAuth);
 
-// POST /api/ai/chat - Send message to AI counselor
-router.post('/chat', requireAuth, aiController.chat);
+router.post('/chat', aiController.chatWithAI);
+router.post('/analyze', aiController.analyzeUserText);
+router.get('/insight', aiController.generateAIInsight)
 
 module.exports = router;

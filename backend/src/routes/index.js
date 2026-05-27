@@ -6,7 +6,6 @@ const moodRoutes = require('./moodRoutes');
 const journalRoutes = require('./journalRoutes');
 const facilityRoutes = require('./facilityRoutes');
 const aiRoutes = require('./aiRoutes');
-const insightRoutes = require('./insightRoutes');
 
 // Daftar route
 router.use('/auth', authRoutes);
@@ -15,6 +14,5 @@ router.use('/moods', moodRoutes);
 router.use('/journals', journalRoutes);
 router.use('/facilities', facilityRoutes);
 router.use('/ai', aiRoutes);
-router.use('/insights', insightRoutes);
 
 module.exports = router;

@@ -19,6 +19,7 @@ const getNearby = async (req, res, next) => {
       rating: place.rating || 0,
       open_now: place.opening_hours ? place.opening_hours.open_now : null,
       location: place.geometry.location,
+      phone_number: place.formatted_phone_number || place.international_phone_number || null, // <-- Tambahan untuk no telepon
       place_id: place.place_id 
     }));
 
