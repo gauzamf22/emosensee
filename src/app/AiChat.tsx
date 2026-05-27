@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Send, Mic, Square, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useNotifications } from "./notifications";
-import { sendChatMessage } from "../services/aiService";
+import { sendChatMessage, getMemory } from "../services/aiService";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { LiveAudioVisualizer } from "react-audio-visualize";
+import Logo from "./Logo";
 
 type Msg = { id: number; from: "user" | "bot"; text: string };
 
@@ -22,7 +23,8 @@ export default function AiChat({ session }: { session?: any }) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [language, setLanguage] = useState<'id-ID' | 'en-US'>('id-ID');
+  const [isLoadingMemory, setIsLoadingMemory] = useState(true);
+  const [language, setLanguage] = useState<'id-ID' | 'en-US'>('en-US');
   const [transcribedText, setTranscribedText] = useState("");
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -49,6 +51,40 @@ export default function AiChat({ session }: { session?: any }) {
       if (timerRef.current) window.clearInterval(timerRef.current);
     };
   }, [recording]);
+
+  // Load conversation memory on mount
+  useEffect(() => {
+    const loadMemory = async () => {
+      try {
+        const memory = await getMemory();
+        
+        if (memory.conversation_history?.history && memory.conversation_history.history.length > 0) {
+          // Transform Gradio's memory format to frontend Msg[]
+          const loadedMessages: Msg[] = memory.conversation_history.history.flatMap((conv, idx) => [
+            {
+              id: idx * 2,
+              from: "user" as const,
+              text: conv.user
+            },
+            {
+              id: idx * 2 + 1,
+              from: "bot" as const,
+              text: conv.ai
+            }
+          ]);
+          
+          setMessages(loadedMessages);
+        }
+      } catch (error) {
+        console.error('Failed to load memory:', error);
+        // Silent failure - user can start fresh conversation
+      } finally {
+        setIsLoadingMemory(false);
+      }
+    };
+
+    loadMemory();
+  }, []);
 
   const formatTime = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -211,34 +247,7 @@ export default function AiChat({ session }: { session?: any }) {
                   ease: "easeInOut",
                 }}
               >
-                <motion.svg
-                  width="120"
-                  height="120"
-                  viewBox="0 0 120 120"
-                  animate={{
-                    scale: [1, 1.05, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <defs>
-                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#4355FF" />
-                      <stop offset="50%" stopColor="#0063F3" />
-                      <stop offset="100%" stopColor="#00A3FF" />
-                    </linearGradient>
-                  </defs>
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    fill="url(#logoGradient)"
-                    opacity="0.9"
-                  />
-                </motion.svg>
+                <Logo className="size-[120px]" />
               </motion.div>
 
               {/* Greeting Text */}

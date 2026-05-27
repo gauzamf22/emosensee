@@ -14,9 +14,10 @@ const getSupabase = (token) => createClient(
 
 /**
  * Get user's AI conversation memory from database
+ * Implements 24h lazy clear - returns empty if >24h old
  * @param {string} userId - User ID
  * @param {string} token - Auth token
- * @returns {Promise<object>} Memory JSON object
+ * @returns {Promise<object>} Memory JSON object (conversation_history for Gradio)
  */
 const getUserMemory = async (userId, token) => {
   const supabase = getSupabase(token);
@@ -30,25 +31,55 @@ const getUserMemory = async (userId, token) => {
   if (error) throw error;
   
   // Return empty memory if no record exists
-  return data?.memory_json || {};
+  if (!data?.memory_json) {
+    return [];
+  }
+  
+  const memory = data.memory_json;
+  
+  // Check if memory has lastUpdated timestamp
+  if (!memory.lastUpdated) {
+    // Old format without timestamp, treat as expired
+    return [];
+  }
+  
+  // Check if memory is older than 24 hours
+  const lastUpdated = new Date(memory.lastUpdated);
+  const now = new Date();
+  const hoursDiff = (now - lastUpdated) / (1000 * 60 * 60);
+  
+  if (hoursDiff > 24) {
+    // Memory expired, return empty
+    return [];
+  }
+  
+  // Return the conversation_history array
+  return memory.conversation_history || [];
 };
 
 /**
  * Save updated AI conversation memory to database
+ * Wraps memory with timestamp for 24h lazy clear
  * @param {string} userId - User ID
- * @param {object} memoryJson - Memory JSON object
+ * @param {object} memoryJson - Memory JSON object from Gradio (conversation_history)
  * @param {string} token - Auth token
  * @returns {Promise<object>} Saved memory data
  */
 const saveUserMemory = async (userId, memoryJson, token) => {
   const supabase = getSupabase(token);
   
+  // Wrap memory with timestamp and conversation_history structure
+  const wrappedMemory = {
+    conversation_history: memoryJson,
+    lastUpdated: new Date().toISOString()
+  };
+  
   const { data, error } = await supabase
     .from('user_ai_memory')
     .upsert(
       {
         user_id: userId,
-        memory_json: memoryJson,
+        memory_json: wrappedMemory,
         updated_at: new Date().toISOString()
       },
       { onConflict: 'user_id' }
@@ -85,10 +116,12 @@ const sendMessageToAI = async (userId, message, token, language) => {
     const client = await Client.connect(GRADIO_SPACE);
     
     // 4. Call AI endpoint with tagged message and memory
+    console.log('[AI Service] Calling Gradio with memory:', JSON.stringify(memory));
     const result = await client.predict(GRADIO_ENDPOINT, {
       text: taggedMessage,
       memory_json: JSON.stringify(memory)
     });
+    console.log('[AI Service] Gradio response:', JSON.stringify(result));
     
     // 5. Parse response
     // Gradio returns result.data array, first element is the JSON string
@@ -114,9 +147,38 @@ const sendMessageToAI = async (userId, message, token, language) => {
       throw new Error('Respons AI tidak lengkap');
     }
     
-    // 6. Save updated memory to database
-    if (updated_memory) {
-      await saveUserMemory(userId, updated_memory, token);
+    // 6. Save conversation memory using Gradio's updated_memory structure
+    // If Gradio provides updated_memory, use it; otherwise construct fallback
+    let memoryToSave = updated_memory;
+    
+    if (!memoryToSave) {
+      // Fallback: construct memory in Gradio's expected format
+      // memory is either [] (empty) or {summary, history, emotion_stats, session_count} (existing)
+      const existingHistory = Array.isArray(memory) ? [] : (memory.history || []);
+      
+      memoryToSave = {
+        summary: Array.isArray(memory) ? "" : (memory.summary || ""),
+        history: [
+          ...existingHistory,
+          {
+            timestamp: new Date().toISOString(),
+            user: taggedMessage,
+            ai: counselor_reply,
+            emotions: analytics?.emotions || [],
+            severity: analytics?.severity || "low"
+          }
+        ],
+        emotion_stats: Array.isArray(memory) ? {} : (memory.emotion_stats || {}),
+        session_count: Array.isArray(memory) ? 1 : ((memory.session_count || 0) + 1)
+      };
+    }
+    
+    // Always save to database
+    try {
+      await saveUserMemory(userId, memoryToSave, token);
+    } catch (saveError) {
+      // Log error but don't fail the request - user still gets AI response
+      console.error('Failed to save conversation memory:', saveError);
     }
     
     // 7. Return structured response
@@ -128,10 +190,17 @@ const sendMessageToAI = async (userId, message, token, language) => {
         severity: 'low',
         severity_score: 1
       },
-      memory: updated_memory || memory
+      memory: memoryToSave
     };
     
   } catch (error) {
+    // Log full error details for debugging
+    console.error('[AI Service] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
     // Handle specific error types
     if (error.message.includes('connect') || error.message.includes('timeout')) {
       throw new Error('Layanan AI sedang sibuk, silakan coba lagi dalam beberapa saat');
@@ -147,6 +216,7 @@ const sendMessageToAI = async (userId, message, token, language) => {
 };
 
 module.exports = {
+  getSupabase,
   getUserMemory,
   saveUserMemory,
   sendMessageToAI

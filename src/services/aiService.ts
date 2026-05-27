@@ -19,6 +19,22 @@ interface ChatResponse {
   message?: string;
 }
 
+interface ConversationEntry {
+  user_message: string;
+  counselor_reply: string;
+}
+
+interface MemoryData {
+  conversation_history: ConversationEntry[];
+  lastUpdated: string | null;
+}
+
+interface MemoryResponse {
+  success: boolean;
+  data: MemoryData;
+  message?: string;
+}
+
 export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-US'): Promise<ChatData> {
   // Get current session token
   const { data: { session } } = await supabase.auth.getSession();
@@ -41,6 +57,35 @@ export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-
   }
 
   const json: ChatResponse = await response.json();
+  
+  if (!json.success) {
+    throw new Error(json.message || 'API request failed');
+  }
+
+  return json.data;
+}
+
+export async function getMemory(): Promise<MemoryData> {
+  // Get current session token
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.access_token) {
+    throw new Error('Anda harus login terlebih dahulu');
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/ai/memory`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const json: MemoryResponse = await response.json();
   
   if (!json.success) {
     throw new Error(json.message || 'API request failed');

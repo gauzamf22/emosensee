@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Bell, ArrowRight, BellOff, Check, Trash2 } from "lucide-react";
 import { useNotifications, formatRelative } from "./notifications";
 import { supabase } from "@/lib/supabase";
+import { getDailyInsight, DailyInsight } from "@/services/insightService";
 import imgJournaling from "@/imports/Support/4cb91f48acd6e9f10f46f5b752c07482e23858b5.png";
 import imgNearby from "@/imports/Support/ab093e6ffeb390cf38f1e75977bb7c3bdcfd4f6c.png";
 import imgEmergency from "@/imports/Support/c17f0039912ca00b8476ed9dc75efc82ed8164c9.png";
@@ -43,6 +44,8 @@ export default function Home({
   const [selected, setSelected] = useState<string | null>(null);
   const [todayMood, setTodayMood] = useState<string | null>(null);
   const [loadingMood, setLoadingMood] = useState(true);
+  const [insight, setInsight] = useState<DailyInsight | null>(null);
+  const [insightLoading, setInsightLoading] = useState(true);
   const { enabled, items, unread, push, markAllRead, clear } = useNotifications();
   const [openPanel, setOpenPanel] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -89,6 +92,18 @@ export default function Home({
 
     fetchTodayMood();
   }, [session?.user?.id]);
+
+  // Fetch daily insight on mount
+  useEffect(() => {
+    const fetchInsight = async () => {
+      setInsightLoading(true);
+      const data = await getDailyInsight();
+      setInsight(data);
+      setInsightLoading(false);
+    };
+
+    fetchInsight();
+  }, []);
 
   useEffect(() => {
     if (!openPanel) return;
@@ -274,10 +289,20 @@ export default function Home({
           <h3 className="font-['Poppins'] font-semibold text-[#3B5BDB] text-sm mb-2">
             Personalized Insight
           </h3>
-          <p className="font-['Nunito'] text-sm text-[#9b9b9b] leading-6 line-clamp-2">
-            A brief overview of your recent emotional patterns. Your recent check-ins suggest
-            moments of emotional...
-          </p>
+          {insightLoading ? (
+            <div className="space-y-2">
+              <div className="h-4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
+              <div className="h-4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%] w-3/4" />
+            </div>
+          ) : insight ? (
+            <p className="font-['Nunito'] text-sm text-[#9b9b9b] leading-6 line-clamp-2">
+              {insight.insight_text}
+            </p>
+          ) : (
+            <p className="font-['Nunito'] text-sm text-[#9b9b9b] leading-6 italic">
+              Start journaling or chatting to get your daily insight
+            </p>
+          )}
         </section>
       </div>
 

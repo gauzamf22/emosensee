@@ -16,16 +16,30 @@ const createJournal = async (userId, title, description, token) => {
   return data;
 };
 
-const getAllJournals = async (userId, token) => {
+const getAllJournals = async (userId, token, limit = 10, offset = 0) => {
   const supabase = getSupabase(token);
+  
+  // Fetch limit+1 to determine if there are more items
   const { data, error } = await supabase
     .from('journals')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false }); 
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit); // Fetch one extra
 
   if (error) throw error;
-  return data;
+  
+  const hasMore = data.length > limit;
+  const journals = hasMore ? data.slice(0, limit) : data;
+  
+  return {
+    journals,
+    pagination: {
+      limit,
+      offset,
+      hasMore
+    }
+  };
 };
 
 const getJournalById = async (userId, journalId, token) => {

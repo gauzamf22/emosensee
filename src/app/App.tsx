@@ -25,6 +25,7 @@ import Logo from "./Logo";
 import { motion } from "motion/react";
 import { NotificationProvider, useNotifications } from "./notifications";
 import { supabase } from "../lib/supabase";
+import * as insightService from "../services/insightService";
 
 type SubPage =
   | "journaling"
@@ -241,16 +242,46 @@ function MoodTrends({ trends }: { trends: MoodTrend[] }) {
 }
 
 function Insight() {
+  const [insight, setInsight] = useState<insightService.DailyInsight | null>(null);
+  const [isLoadingInsight, setIsLoadingInsight] = useState(true);
+
+  useEffect(() => {
+    const fetchInsight = async () => {
+      try {
+        setIsLoadingInsight(true);
+        const data = await insightService.getDailyInsight();
+        setInsight(data);
+      } catch (error) {
+        console.error("Failed to fetch insight:", error);
+        setInsight(null);
+      } finally {
+        setIsLoadingInsight(false);
+      }
+    };
+
+    fetchInsight();
+  }, []);
+
   return (
     <Card>
       <h3 className="font-['Poppins'] font-semibold text-[#1f1f1f] text-base mb-4">
         Personalized Insight
       </h3>
-      <p className="font-['Nunito'] text-[15px] leading-7 text-[#6B7280]">
-        A brief overview of your recent emotional patterns. Your recent check-ins suggest
-        moments of emotional fatigue during busy days. Taking short pauses and reflecting on
-        your feelings may help you feel more balanced.
-      </p>
+      {isLoadingInsight ? (
+        <div className="space-y-2">
+          <div className="h-4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
+          <div className="h-4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
+          <div className="h-4 w-3/4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
+        </div>
+      ) : insight ? (
+        <p className="font-['Nunito'] text-[15px] leading-7 text-[#6B7280]">
+          {insight.insight_text}
+        </p>
+      ) : (
+        <p className="font-['Nunito'] text-[15px] leading-7 text-[#9CA3AF] italic">
+          Start journaling or chatting to get your daily insight
+        </p>
+      )}
     </Card>
   );
 }
