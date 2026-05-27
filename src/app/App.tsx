@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   ChevronDown,
@@ -16,6 +16,7 @@ import Emergency from "./Emergency";
 import Profile from "./Profile";
 import Settings from "./Settings";
 import RecentActivities from "./RecentActivities";
+import ResetCredentials from "./ResetCredentials";
 import HomePage from "./Home";
 import AiChat from "./AiChat";
 import Auth from "./Auth";
@@ -24,7 +25,9 @@ import Splash from "./Splash";
 import Logo from "./Logo";
 import { motion } from "motion/react";
 import { NotificationProvider, useNotifications } from "./notifications";
-import AnxietyChick from "./AnxietyChick";
+import { supabase } from "../lib/supabase";
+import * as insightService from "../services/insightService";
+import { useTranslation } from "../translations";
 
 type SubPage =
   | "journaling"
@@ -33,45 +36,44 @@ type SubPage =
   | "emergency"
   | "settings"
   | "activities"
+  | "resetCredentials"
   | null;
 
 type NavKey = "home" | "journey" | "ai" | "support" | "profile";
 
-const NAV: { key: NavKey; label: string; icon: typeof Home }[] = [
-  { key: "home", label: "Home", icon: Home },
-  { key: "journey", label: "Journey", icon: CalendarHeart },
-  { key: "ai", label: "AI Chat", icon: MessageCircle },
-  { key: "support", label: "Support", icon: LifeBuoy },
-  { key: "profile", label: "Profile", icon: User },
-];
-
-const DAYS = [
-  { d: "Sun", n: 3, mood: "happy" as const },
-  { d: "Mon", n: 4, mood: "neutral" as const },
-  { d: "Tue", n: 5, mood: "sad" as const },
-  { d: "Wed", n: 6, mood: "happy" as const, active: true },
-  { d: "Thu", n: 7, mood: null },
-  { d: "Fri", n: 8, mood: null },
-  { d: "Sat", n: 9, mood: null },
-];
+type DayMood = {
+  d: string;
+  n: number;
+  mood: string | null;
+  active?: boolean;
+};
 
 const MOOD_EMOJI: Record<string, string> = {
   happy: "😊",
   neutral: "😐",
   sad: "😔",
-  anxious: "🐥",
+  anxious: "😥",
   angry: "😠",
 };
 
-const TRENDS = [
-  { label: "Angry", value: 32, color: "bg-[#FADCD9]", emoji: "😠" },
-  { label: "Anxious", value: 82, color: "bg-[#FBE9B7]", emoji: "chick", showPct: true },
-  { label: "Sad", value: 28, color: "bg-[#DCE4F5]", emoji: "😢" },
-  { label: "Neutral", value: 22, color: "bg-[#EDE6DD]", emoji: "😐" },
-  { label: "Happy", value: 70, color: "bg-[#DCEBC6]", emoji: "😊" },
-];
+type MoodTrend = {
+  label: string;
+  value: number;
+  color: string;
+  emoji: string;
+  textColor: string;
+};
 
 function Sidebar({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey) => void }) {
+  const { t } = useTranslation();
+  const NAV: { key: NavKey; icon: typeof Home }[] = [
+    { key: "home", icon: Home },
+    { key: "journey", icon: CalendarHeart },
+    { key: "ai", icon: MessageCircle },
+    { key: "support", icon: LifeBuoy },
+    { key: "profile", icon: User },
+  ];
+  
   return (
     <aside className="hidden md:flex md:flex-col md:w-20 lg:w-60 border-r border-[#EFEFF3] bg-white py-8 px-3 lg:px-5 shrink-0">
       <div className="flex items-center gap-2 px-2 mb-10">
@@ -81,7 +83,7 @@ function Sidebar({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey) =
         </span>
       </div>
       <nav className="flex flex-col gap-1">
-        {NAV.map(({ key, label, icon: Icon }) => {
+        {NAV.map(({ key, icon: Icon }) => {
           const isActive = active === key;
           return (
             <button
@@ -94,7 +96,7 @@ function Sidebar({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey) =
               }`}
             >
               <Icon className="size-5 shrink-0" strokeWidth={isActive ? 2.4 : 2} />
-              <span className="hidden lg:inline">{label}</span>
+              <span className="hidden lg:inline">{t.nav[key]}</span>
             </button>
           );
         })}
@@ -104,21 +106,32 @@ function Sidebar({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey) =
 }
 
 function BottomNav({ active, onSelect }: { active: NavKey; onSelect: (k: NavKey) => void }) {
+  const { t } = useTranslation();
+  const NAV: { key: NavKey; icon: typeof Home }[] = [
+    { key: "home", icon: Home },
+    { key: "journey", icon: CalendarHeart },
+    { key: "ai", icon: MessageCircle },
+    { key: "support", icon: LifeBuoy },
+    { key: "profile", icon: User },
+  ];
+  
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[#EFEFF3] pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-stretch justify-around px-2 pt-2 pb-2">
-        {NAV.map(({ key, label, icon: Icon }) => {
+        {NAV.map(({ key, icon: Icon }) => {
           const isActive = active === key;
           return (
             <button
               key={key}
               onClick={() => onSelect(key)}
-              className={`flex flex-col items-center gap-1 flex-1 py-1.5 transition-colors font-['Nunito'] ${
+              className={`flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-lg transition-colors min-w-0 ${
                 isActive ? "text-[#3B5BDB]" : "text-[#9b9b9b]"
               }`}
             >
-              <Icon className="size-5" strokeWidth={isActive ? 2.4 : 2} />
-              <span className="text-[11px] font-semibold">{label}</span>
+              <Icon className="size-5 shrink-0" strokeWidth={isActive ? 2.4 : 2} />
+              <span className="text-[10px] font-['Nunito'] font-semibold truncate max-w-full">
+                {t.nav[key]}
+              </span>
             </button>
           );
         })}
@@ -146,23 +159,25 @@ function PeriodPill({ children = "Week" }: { children?: string }) {
   );
 }
 
-function DailyMood() {
+function DailyMood({ days }: { days: DayMood[] }) {
   const { push } = useNotifications();
+  const { t } = useTranslation();
+  
   return (
     <Card>
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-['Poppins'] font-semibold text-[#1f1f1f] text-base">Daily Mood</h3>
-        <PeriodPill />
+        <h3 className="font-['Poppins'] font-semibold text-[#1f1f1f] text-base">{t.home.dailyMood}</h3>
+        <PeriodPill>{t.journaling.week}</PeriodPill>
       </div>
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
-        {DAYS.map((day) => (
+        {days.map((day) => (
           <button
             type="button"
             onClick={() =>
               push({
                 source: "journey",
                 title: `Viewed ${day.d}`,
-                body: day.mood ? `Mood logged: ${day.mood}` : "No mood logged yet.",
+                body: day.mood ? `Mood logged: ${t.home.moods[day.mood as keyof typeof t.home.moods]}` : "No mood logged yet.",
               })
             }
             key={day.d}
@@ -184,13 +199,14 @@ function DailyMood() {
   );
 }
 
-function MoodTrends() {
+function MoodTrends({ trends }: { trends: MoodTrend[] }) {
+  const { t } = useTranslation();
   const maxH = 220;
   return (
     <Card>
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-['Poppins'] font-semibold text-[#1f1f1f] text-base">Mood Trends</h3>
-        <PeriodPill />
+        <h3 className="font-['Poppins'] font-semibold text-[#1f1f1f] text-base">{t.home.moodTrends}</h3>
+        <PeriodPill>{t.journaling.week}</PeriodPill>
       </div>
       <div className="relative">
         <div
@@ -201,33 +217,32 @@ function MoodTrends() {
           className="relative grid grid-cols-5 gap-3 sm:gap-5 items-center"
           style={{ height: `${maxH}px` }}
         >
-          {TRENDS.map((t) => (
-            <div key={t.label} className="flex justify-center h-full items-center">
+          {trends.map((trend) => (
+            <div key={trend.label} className="flex justify-center h-full items-center">
               <div
-                className={`relative w-full max-w-[68px] rounded-[18px] ${t.color} flex flex-col items-center justify-between py-3`}
-                style={{ height: `${(t.value / 100) * maxH}px`, minHeight: "60px" }}
+                className={`relative w-full max-w-[68px] rounded-[18px] ${trend.color} flex items-center justify-center`}
+                style={{ height: `${(trend.value / 100) * maxH}px`, minHeight: "60px" }}
               >
-                {t.showPct && (
-                  <span className="font-['Nunito'] font-bold text-xs text-[#5C8A2A]">
-                    {t.value}%
+                {trend.value > 0 && (
+                  <span 
+                    className="absolute inset-0 flex items-center justify-center font-['Nunito'] font-bold text-xs"
+                    style={{ color: trend.textColor }}
+                  >
+                    {trend.value}%
                   </span>
                 )}
-                {t.emoji === "chick" ? (
-                  <span className="mt-auto"><AnxietyChick className="size-8" /></span>
-                ) : (
-                  <span className="text-2xl leading-none mt-auto">{t.emoji}</span>
-                )}
+                <span className="text-2xl leading-none mt-auto mb-3">{trend.emoji}</span>
               </div>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-5 gap-3 sm:gap-5 mt-4">
-          {TRENDS.map((t) => (
+          {trends.map((trend) => (
             <span
-              key={t.label}
+              key={trend.label}
               className="text-center font-['Nunito'] text-sm text-[#9b9b9b]"
             >
-              {t.label}
+              {t.home.moods[trend.label as keyof typeof t.home.moods]}
             </span>
           ))}
         </div>
@@ -237,16 +252,47 @@ function MoodTrends() {
 }
 
 function Insight() {
+  const { t } = useTranslation();
+  const [insight, setInsight] = useState<insightService.DailyInsight | null>(null);
+  const [isLoadingInsight, setIsLoadingInsight] = useState(true);
+
+  useEffect(() => {
+    const fetchInsight = async () => {
+      try {
+        setIsLoadingInsight(true);
+        const data = await insightService.getDailyInsight();
+        setInsight(data);
+      } catch (error) {
+        console.error("Failed to fetch insight:", error);
+        setInsight(null);
+      } finally {
+        setIsLoadingInsight(false);
+      }
+    };
+
+    fetchInsight();
+  }, []);
+
   return (
     <Card>
       <h3 className="font-['Poppins'] font-semibold text-[#1f1f1f] text-base mb-4">
-        Personalized Insight
+        {t.home.insight.personalizedInsight}
       </h3>
-      <p className="font-['Nunito'] text-[15px] leading-7 text-[#6B7280]">
-        A brief overview of your recent emotional patterns. Your recent check-ins suggest
-        moments of emotional fatigue during busy days. Taking short pauses and reflecting on
-        your feelings may help you feel more balanced.
-      </p>
+      {isLoadingInsight ? (
+        <div className="space-y-2">
+          <div className="h-4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
+          <div className="h-4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
+          <div className="h-4 w-3/4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
+        </div>
+      ) : insight ? (
+        <p className="font-['Nunito'] text-[15px] leading-7 text-[#6B7280]">
+          {insight.insight_text}
+        </p>
+      ) : (
+        <p className="font-['Nunito'] text-[15px] leading-7 text-[#9CA3AF] italic">
+          {t.home.insight.placeholder}
+        </p>
+      )}
     </Card>
   );
 }
@@ -265,6 +311,126 @@ function AppInner() {
   const [authed, setAuthed] = useState(false);
   const [active, setActive] = useState<NavKey>("home");
   const [sub, setSub] = useState<SubPage>(null);
+  const [days, setDays] = useState<DayMood[]>([]);
+  const [trends, setTrends] = useState<MoodTrend[]>([]);
+  const [session, setSession] = useState<any>(null);
+
+  // Fetch mood data from Supabase
+  const fetchMoodData = async (userId: string) => {
+    try {
+      // Get last 7 days
+      const today = new Date();
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(today.getDate() - 6);
+      
+      const startDate = sevenDaysAgo.toISOString().split('T')[0];
+      const endDate = today.toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .from('mood_entries')
+        .select('mood, date_logged')
+        .eq('user_id', userId)
+        .gte('date_logged', startDate)
+        .lte('date_logged', endDate)
+        .order('date_logged', { ascending: true });
+
+      if (error) throw error;
+
+      // Build 7-day array
+      const moodMap = new Map(data?.map(entry => [entry.date_logged, entry.mood]) || []);
+      const daysArray: DayMood[] = [];
+      const todayStr = today.toISOString().split('T')[0];
+
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+        
+        daysArray.push({
+          d: dayName,
+          n: date.getDate(),
+          mood: moodMap.get(dateStr) || null,
+          active: dateStr === todayStr,
+        });
+      }
+
+      setDays(daysArray);
+
+      // Calculate mood statistics
+      const moodCounts: Record<string, number> = {
+        angry: 0,
+        anxious: 0,
+        sad: 0,
+        neutral: 0,
+        happy: 0,
+      };
+
+      data?.forEach(entry => {
+        if (entry.mood && moodCounts.hasOwnProperty(entry.mood)) {
+          moodCounts[entry.mood]++;
+        }
+      });
+
+      const total = data?.length || 0;
+      const maxMood = total > 0 
+        ? Object.entries(moodCounts).reduce((a, b) => a[1] > b[1] ? a : b)[0]
+        : 'anxious';
+
+      const trendsArray: MoodTrend[] = [
+        { 
+          label: "angry", 
+          value: total > 0 ? Math.round((moodCounts.angry / total) * 100) : 0, 
+          color: "bg-[#FADCD9]", 
+          emoji: "😠",
+          textColor: "#B91C1C"
+        },
+        { 
+          label: "anxious", 
+          value: total > 0 ? Math.round((moodCounts.anxious / total) * 100) : 0, 
+          color: "bg-[#FBE9B7]", 
+          emoji: "😥",
+          textColor: "#92400E"
+        },
+        { 
+          label: "sad", 
+          value: total > 0 ? Math.round((moodCounts.sad / total) * 100) : 0, 
+          color: "bg-[#DCE4F5]", 
+          emoji: "😢",
+          textColor: "#1E40AF"
+        },
+        { 
+          label: "neutral", 
+          value: total > 0 ? Math.round((moodCounts.neutral / total) * 100) : 0, 
+          color: "bg-[#EDE6DD]", 
+          emoji: "😐",
+          textColor: "#78350F"
+        },
+        { 
+          label: "happy", 
+          value: total > 0 ? Math.round((moodCounts.happy / total) * 100) : 0, 
+          color: "bg-[#DCEBC6]", 
+          emoji: "😊",
+          textColor: "#15803D"
+        },
+      ];
+
+      setTrends(trendsArray);
+    } catch (error) {
+      console.error('Error fetching mood data:', error);
+    }
+  };
+
+  // Check for existing session on mount
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session);
+        setAuthed(true);
+        fetchMoodData(session.user.id);
+      }
+    });
+  }, []);
 
   if (!splashDone) {
     return <Splash onDone={() => setSplashDone(true)} />;
@@ -356,15 +522,31 @@ function AppInner() {
           ) : sub === "emergency" ? (
             <Emergency />
           ) : sub === "settings" ? (
-            <Settings />
+            <Settings onNavigate={(page) => setSub(page)} />
+          ) : sub === "resetCredentials" ? (
+            <ResetCredentials onBack={() => setSub("settings")} />
           ) : sub === "activities" ? (
             <RecentActivities />
           ) : active === "support" ? (
             <Support onOpen={(key) => setSub(key)} />
           ) : active === "profile" ? (
-            <Profile onOpen={(a) => setSub(a)} />
+            <Profile 
+              onOpen={(a) => {
+                if (a === "home") {
+                  setActive("home");
+                  setSub(null);
+                } else if (a === "journaling") {
+                  setActive("journaling");
+                  setSub(null);
+                } else {
+                  setSub(a);
+                }
+              }}
+              session={session}
+            />
           ) : active === "home" ? (
             <HomePage
+              session={session}
               onQuickOpen={(k) => {
                 setActive("support");
                 setSub(k);
@@ -373,13 +555,18 @@ function AppInner() {
                 setActive("ai");
                 setSub(null);
               }}
+              onMoodSaved={() => {
+                if (session?.user?.id) {
+                  fetchMoodData(session.user.id);
+                }
+              }}
             />
           ) : active === "ai" ? (
-            <AiChat />
+            <AiChat session={session} />
           ) : (
             <>
-              <DailyMood />
-              <MoodTrends />
+              <DailyMood days={days} />
+              <MoodTrends trends={trends} />
               <Insight />
             </>
           )}

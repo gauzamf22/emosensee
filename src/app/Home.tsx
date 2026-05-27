@@ -1,38 +1,112 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, ArrowRight, BellOff, Check, Trash2 } from "lucide-react";
 import { useNotifications, formatRelative } from "./notifications";
-import AnxietyChick from "./AnxietyChick";
+import { supabase } from "@/lib/supabase";
+import { getDailyInsight, DailyInsight } from "@/services/insightService";
+import { useTranslation } from "../translations";
 import imgJournaling from "@/imports/Support/4cb91f48acd6e9f10f46f5b752c07482e23858b5.png";
 import imgNearby from "@/imports/Support/ab093e6ffeb390cf38f1e75977bb7c3bdcfd4f6c.png";
 import imgEmergency from "@/imports/Support/c17f0039912ca00b8476ed9dc75efc82ed8164c9.png";
 
 type QuickKey = "journaling" | "nearby" | "emergency";
 
-const QUICK: { key: QuickKey; label: string; img: string; overlay: number }[] = [
-  { key: "journaling", label: "Journaling", img: imgJournaling, overlay: 0.4 },
-  { key: "nearby", label: "Nearby Services", img: imgNearby, overlay: 0.35 },
-  { key: "emergency", label: "Emergency Help", img: imgEmergency, overlay: 0.25 },
-];
-
-const MOODS = [
-  { key: "angry", label: "Angry", emoji: "😠", color: "#FADCD9" },
-  { key: "anxious", label: "Anxiety", emoji: "chick", color: "#FBE9B7", active: true },
-  { key: "sad", label: "Sad", emoji: "😢", color: "#DCE4F5" },
-  { key: "neutral", label: "Neutral", emoji: "😐", color: "#EDE6DD" },
-  { key: "happy", label: "Happy", emoji: "🙂", color: "#DCEBC6" },
-];
-
 export default function Home({
   onQuickOpen,
   onStartChat,
+  session,
+  onMoodSaved,
 }: {
   onQuickOpen?: (k: QuickKey) => void;
   onStartChat?: () => void;
+  session?: any;
+  onMoodSaved?: () => void;
 }) {
-  const [selected, setSelected] = useState("anxious");
+  const { t } = useTranslation();
+  const [selected, setSelected] = useState<string | null>(null);
+  const [todayMood, setTodayMood] = useState<string | null>(null);
+  const [loadingMood, setLoadingMood] = useState(true);
+  const [insight, setInsight] = useState<DailyInsight | null>(null);
+  const [insightLoading, setInsightLoading] = useState(true);
   const { enabled, items, unread, push, markAllRead, clear } = useNotifications();
   const [openPanel, setOpenPanel] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic data based on translations
+  const QUICK: { key: QuickKey; label: string; img: string; overlay: number }[] = [
+    { key: "journaling", label: t.home.quickActions.journaling, img: imgJournaling, overlay: 0.4 },
+    { key: "nearby", label: t.home.quickActions.nearby, img: imgNearby, overlay: 0.35 },
+    { key: "emergency", label: t.home.quickActions.emergency, img: imgEmergency, overlay: 0.25 },
+  ];
+
+  const MOODS = [
+    { key: "angry", label: t.home.moods.angry, emoji: "😠", color: "#FADCD9" },
+    { key: "anxious", label: t.home.moods.anxious, emoji: "😥", color: "#FBE9B7", active: true },
+    { key: "sad", label: t.home.moods.sad, emoji: "😢", color: "#DCE4F5" },
+    { key: "neutral", label: t.home.moods.neutral, emoji: "😐", color: "#EDE6DD" },
+    { key: "happy", label: t.home.moods.happy, emoji: "🙂", color: "#DCEBC6" },
+  ];
+
+  const getTimeBasedGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t.home.greetings.morning;
+    if (hour < 18) return t.home.greetings.afternoon;
+    return t.home.greetings.evening;
+  };
+
+  // Generate dynamic greeting
+  const username = session?.user?.user_metadata?.username;
+  const greetingText = username 
+    ? `${t.home.hi}, ${username}!` 
+    : `${getTimeBasedGreeting()}!`;
+  const avatarInitial = username ? username[0].toUpperCase() : "U";
+
+  // Fetch today's mood on mount
+  useEffect(() => {
+    const fetchTodayMood = async () => {
+      if (!session?.user?.id) {
+        setLoadingMood(false);
+        return;
+      }
+
+      try {
+        const dateLogged = new Date().toISOString().split('T')[0];
+        
+        const { data, error } = await supabase
+          .from('mood_entries')
+          .select('mood')
+          .eq('user_id', session.user.id)
+          .eq('date_logged', dateLogged)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching today mood:', error);
+        }
+
+        if (data) {
+          setTodayMood(data.mood);
+          setSelected(data.mood);
+        }
+      } catch (error) {
+        console.error('Error fetching today mood:', error);
+      } finally {
+        setLoadingMood(false);
+      }
+    };
+
+    fetchTodayMood();
+  }, [session?.user?.id]);
+
+  // Fetch daily insight on mount
+  useEffect(() => {
+    const fetchInsight = async () => {
+      setInsightLoading(true);
+      const data = await getDailyInsight();
+      setInsight(data);
+      setInsightLoading(false);
+    };
+
+    fetchInsight();
+  }, []);
 
   useEffect(() => {
     if (!openPanel) return;
@@ -47,9 +121,41 @@ export default function Home({
     if (openPanel && unread > 0) markAllRead();
   }, [openPanel, unread, markAllRead]);
 
-  const onMood = (key: string, label: string) => {
+  const onMood = async (key: string, label: string) => {
     setSelected(key);
-    push({ source: "home", title: "Mood checked in", body: `You logged feeling ${label.toLowerCase()}.` });
+    
+    if (!session?.user?.id) {
+      push({ source: "home", title: t.home.moodTracker.error, body: t.home.moodTracker.signInRequired });
+      return;
+    }
+
+    try {
+      const dateLogged = new Date().toISOString().split('T')[0];
+      
+      const { error } = await supabase
+        .from('mood_entries')
+        .upsert(
+          {
+            user_id: session.user.id,
+            mood: key,
+            date_logged: dateLogged,
+          },
+          {
+            onConflict: 'user_id,date_logged',
+          }
+        );
+
+      if (error) throw error;
+
+      setTodayMood(key);
+      
+      push({ source: "home", title: t.home.moodTracker.checkedIn, body: `${t.home.moodTracker.logged} ${label.toLowerCase()}.` });
+      
+      onMoodSaved?.();
+    } catch (error) {
+      console.error('Error saving mood:', error);
+      push({ source: "home", title: t.home.moodTracker.error, body: t.home.moodTracker.saveFailed });
+    }
   };
 
   return (
@@ -57,10 +163,10 @@ export default function Home({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-full bg-gradient-to-br from-[#A7C7E7] to-[#7A9E7E] grid place-items-center text-white font-['Poppins'] font-bold text-sm">
-            L
+            {avatarInitial}
           </div>
           <span className="font-['Poppins'] font-semibold text-[#1f1f1f] text-base">
-            Hi Layla!
+            {greetingText}
           </span>
         </div>
         <div className="relative" ref={panelRef}>
@@ -78,20 +184,20 @@ export default function Home({
           {openPanel && (
             <div className="absolute right-0 mt-2 w-[320px] sm:w-[360px] bg-white rounded-2xl border border-[#EFEFF3] shadow-[0_20px_40px_-20px_rgba(17,24,39,0.25)] z-40 overflow-hidden">
               <div className="px-4 py-3 flex items-center justify-between border-b border-[#EFEFF3]">
-                <span className="font-['Poppins'] font-semibold text-[#1f1f1f] text-sm">Notifications</span>
+                <span className="font-['Poppins'] font-semibold text-[#1f1f1f] text-sm">{t.home.notifications.title}</span>
                 <div className="flex items-center gap-1">
                   {items.length > 0 && (
                     <>
                       <button
                         onClick={markAllRead}
-                        title="Mark all read"
+                        title={t.home.notifications.markAllRead}
                         className="size-7 rounded-full grid place-items-center hover:bg-[#F4F6FB] text-[#6B7280]"
                       >
                         <Check className="size-4" />
                       </button>
                       <button
                         onClick={clear}
-                        title="Clear all"
+                        title={t.home.notifications.clearAll}
                         className="size-7 rounded-full grid place-items-center hover:bg-[#F4F6FB] text-[#6B7280]"
                       >
                         <Trash2 className="size-4" />
@@ -103,11 +209,11 @@ export default function Home({
               <div className="max-h-[360px] overflow-y-auto">
                 {!enabled ? (
                   <p className="px-4 py-8 text-center font-['Nunito'] text-sm text-[#9b9b9b]">
-                    Notifications are off. Turn them on in Settings.
+                    {t.home.notifications.disabled}
                   </p>
                 ) : items.length === 0 ? (
                   <p className="px-4 py-8 text-center font-['Nunito'] text-sm text-[#9b9b9b]">
-                    You're all caught up.
+                    {t.home.notifications.empty}
                   </p>
                 ) : (
                   items.map((n) => (
@@ -136,10 +242,10 @@ export default function Home({
 
       <div className="flex flex-col gap-2">
         <h2 className="font-['Poppins'] font-bold text-[#1f1f1f] text-2xl sm:text-3xl leading-tight">
-          How are you feeling today?
+          {t.home.moodTracker.title}
         </h2>
         <p className="font-['Nunito'] text-sm text-[#9b9b9b]">
-          Your feelings are valid. Let take a moment to check-in
+          {t.home.moodTracker.subtitle}
         </p>
       </div>
 
@@ -151,6 +257,7 @@ export default function Home({
               <button
                 key={m.key}
                 onClick={() => onMood(m.key, m.label)}
+                disabled={loadingMood}
                 className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all ${
                   isActive ? "ring-2 ring-offset-1" : "hover:bg-[#F8F9FC]"
                 }`}
@@ -159,11 +266,7 @@ export default function Home({
                   ...(isActive ? ({ "--tw-ring-color": m.color } as React.CSSProperties) : {}),
                 }}
               >
-                {m.emoji === "chick" ? (
-                  <AnxietyChick className="size-8 sm:size-9" />
-                ) : (
-                  <span className="text-2xl sm:text-3xl leading-none">{m.emoji}</span>
-                )}
+                <span className="text-2xl sm:text-3xl leading-none">{m.emoji}</span>
                 <span
                   className={`font-['Nunito'] text-xs ${
                     isActive ? "text-[#1f1f1f] font-semibold" : "text-[#9b9b9b]"
@@ -187,12 +290,22 @@ export default function Home({
         />
         <section className="relative bg-white rounded-[14px] shadow-[0_8px_24px_-12px_rgba(17,24,39,0.06)] p-5">
           <h3 className="font-['Poppins'] font-semibold text-[#3B5BDB] text-sm mb-2">
-            Personalized Insight
+            {t.home.insight.title}
           </h3>
-          <p className="font-['Nunito'] text-sm text-[#9b9b9b] leading-6 line-clamp-2">
-            A brief overview of your recent emotional patterns. Your recent check-ins suggest
-            moments of emotional...
-          </p>
+          {insightLoading ? (
+            <div className="space-y-2">
+              <div className="h-4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
+              <div className="h-4 bg-gradient-to-r from-[#F1F1F4] via-[#E5E5E8] to-[#F1F1F4] rounded animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%] w-3/4" />
+            </div>
+          ) : insight ? (
+            <p className="font-['Nunito'] text-sm text-[#9b9b9b] leading-6 line-clamp-2">
+              {insight.insight_text}
+            </p>
+          ) : (
+            <p className="font-['Nunito'] text-sm text-[#9b9b9b] leading-6 italic">
+              {t.home.insight.empty}
+            </p>
+          )}
         </section>
       </div>
 

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { supabase } from "../lib/supabase";
+import { useTranslation } from "../translations";
 
 type Mode = "login" | "signup";
 
@@ -68,10 +70,11 @@ function PasswordField({
   );
 }
 
-function SocialButtons() {
+function SocialButtons({ onGoogleClick }: { onGoogleClick: () => void }) {
   const buttons = [
     {
       label: "Google",
+      onClick: onGoogleClick,
       svg: (
         <svg viewBox="0 0 24 24" className="size-6">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -83,6 +86,7 @@ function SocialButtons() {
     },
     {
       label: "Apple",
+      onClick: undefined,
       svg: (
         <svg viewBox="0 0 24 24" className="size-6" fill="currentColor">
           <path d="M16.5 1.5c0 1.13-.46 2.21-1.21 3-.81.86-2.13 1.53-3.22 1.44-.13-1.1.41-2.24 1.13-2.97.81-.82 2.18-1.43 3.3-1.47zM20.5 17.13c-.32.74-.71 1.43-1.18 2.07-.64.88-1.16 1.49-1.57 1.83-.63.55-1.31.84-2.04.86-.52 0-1.15-.15-1.88-.45-.73-.3-1.41-.45-2.02-.45-.65 0-1.34.15-2.07.45-.73.3-1.32.46-1.77.47-.7.03-1.4-.27-2.09-.9-.44-.37-.99-1-1.63-1.91-.69-.97-1.26-2.1-1.7-3.39-.48-1.4-.71-2.76-.71-4.07 0-1.5.32-2.79.97-3.88.51-.87 1.19-1.55 2.04-2.06.85-.51 1.78-.77 2.78-.78.56 0 1.29.17 2.2.51.91.34 1.49.51 1.75.51.19 0 .84-.2 1.94-.6 1.04-.37 1.92-.52 2.65-.46 1.97.16 3.45.94 4.43 2.34-1.76 1.07-2.63 2.57-2.62 4.49.01 1.5.55 2.74 1.62 3.74.48.46 1.02.82 1.62 1.07-.13.38-.27.74-.41 1.09z" />
@@ -91,6 +95,7 @@ function SocialButtons() {
     },
     {
       label: "Twitter",
+      onClick: undefined,
       svg: (
         <svg viewBox="0 0 24 24" className="size-6" fill="#1DA1F2">
           <path d="M23 4.95a9.6 9.6 0 0 1-2.71.74 4.72 4.72 0 0 0 2.07-2.6 9.4 9.4 0 0 1-3 1.14 4.71 4.71 0 0 0-8.02 4.29A13.36 13.36 0 0 1 1.64 3.6a4.71 4.71 0 0 0 1.46 6.28 4.68 4.68 0 0 1-2.13-.59v.06a4.71 4.71 0 0 0 3.78 4.62 4.74 4.74 0 0 1-2.13.08 4.71 4.71 0 0 0 4.4 3.27A9.45 9.45 0 0 1 1 19.27a13.33 13.33 0 0 0 7.22 2.12c8.66 0 13.4-7.18 13.4-13.4l-.02-.61A9.55 9.55 0 0 0 23 4.95z" />
@@ -104,7 +109,9 @@ function SocialButtons() {
         <button
           key={b.label}
           type="button"
-          className="flex-1 bg-white border border-[#CCC] rounded-lg py-3 grid place-items-center hover:bg-[#F8F9FC] transition-colors"
+          onClick={b.onClick}
+          disabled={!b.onClick}
+          className="flex-1 bg-white border border-[#CCC] rounded-lg py-3 grid place-items-center hover:bg-[#F8F9FC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label={b.label}
         >
           {b.svg}
@@ -119,8 +126,69 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const isSignup = mode === "signup";
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (isSignup) {
+        // Register new user
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              username,
+            },
+          },
+        });
+
+        if (signUpError) throw signUpError;
+
+        if (data.user) {
+          // Auto-login after signup
+          onAuthed();
+        }
+      } else {
+        // Login existing user
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) throw signInError;
+
+        if (data.user) {
+          onAuthed();
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || "Google login failed");
+    }
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#F6F7FB] flex items-center justify-center px-4 py-10">
@@ -130,13 +198,7 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
             {isSignup ? "Sign Up" : "Login"}
           </h1>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              onAuthed();
-            }}
-            className="flex flex-col gap-5"
-          >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <Field
               label="Email"
               type="email"
@@ -154,18 +216,25 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
             )}
             <PasswordField value={password} onChange={setPassword} showForgot={!isSignup} />
 
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
+              disabled={loading}
               className={`h-11 rounded-[10px] font-['Inter'] font-medium text-white text-lg transition-colors ${
                 isSignup ? "bg-[#4355FF] hover:bg-[#3445e6]" : "bg-[#0063F3] hover:bg-[#0052cc]"
-              }`}
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              Next
+              {loading ? "Loading..." : "Next"}
             </button>
 
             <div className="text-center font-['Inter'] font-medium text-[#4355FF]">or</div>
 
-            <SocialButtons />
+            <SocialButtons onGoogleClick={handleGoogleLogin} />
 
             <button
               type="button"
