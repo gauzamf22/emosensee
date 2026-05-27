@@ -9,7 +9,14 @@ import { LiveAudioVisualizer } from "react-audio-visualize";
 
 type Msg = { id: number; from: "user" | "bot"; text: string };
 
-export default function AiChat() {
+function getTimeBasedGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning";
+  if (hour < 18) return "Good Afternoon";
+  return "Good Evening";
+}
+
+export default function AiChat({ session }: { session?: any }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [recording, setRecording] = useState(false);
@@ -20,6 +27,12 @@ export default function AiChat() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const timerRef = useRef<number | null>(null);
   const { push } = useNotifications();
+
+  // Generate dynamic greeting
+  const username = session?.user?.user_metadata?.username;
+  const greetingText = username 
+    ? `Hi, ${username}!` 
+    : `${getTimeBasedGreeting()}!`;
 
   const {
     transcript,
@@ -186,11 +199,55 @@ export default function AiChat() {
       <div className="flex-1 flex flex-col gap-3 overflow-y-auto pb-4">
         {messages.length === 0 ? (
           <div className="flex-1 grid place-items-center text-center px-4">
-            <div>
-              <p className="font-['Poppins'] text-[#0063F3] text-base sm:text-lg">Hi Layla,</p>
-              <p className="font-['Poppins'] text-[#1f1f1f] text-base sm:text-lg mt-1">
-                How are you feeling today?
-              </p>
+            <div className="flex flex-col items-center gap-6">
+              {/* Animated Logo */}
+              <motion.div
+                animate={{
+                  y: [0, -12, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <motion.svg
+                  width="120"
+                  height="120"
+                  viewBox="0 0 120 120"
+                  animate={{
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#4355FF" />
+                      <stop offset="50%" stopColor="#0063F3" />
+                      <stop offset="100%" stopColor="#00A3FF" />
+                    </linearGradient>
+                  </defs>
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    fill="url(#logoGradient)"
+                    opacity="0.9"
+                  />
+                </motion.svg>
+              </motion.div>
+
+              {/* Greeting Text */}
+              <div>
+                <p className="font-['Poppins'] text-[#0063F3] text-base sm:text-lg">{greetingText}</p>
+                <p className="font-['Poppins'] text-[#1f1f1f] text-base sm:text-lg mt-1">
+                  How are you feeling today?
+                </p>
+              </div>
             </div>
           </div>
         ) : (

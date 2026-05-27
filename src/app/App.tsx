@@ -505,7 +505,7 @@ function AppInner() {
               }}
             />
           ) : active === "ai" ? (
-            <AiChat />
+            <AiChat session={session} />
           ) : (
             <>
               <DailyMood days={days} />
