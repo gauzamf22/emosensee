@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Mic, X, Check } from "lucide-react";
+import { Send, Mic, Square, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useNotifications } from "./notifications";
 import { sendChatMessage } from "../services/aiService";
-import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
+import ErrorBoundary from "../components/ErrorBoundary";
+import { LiveAudioVisualizer } from "react-audio-visualize";
 
 type Msg = { id: number; from: "user" | "bot"; text: string };
 
@@ -14,17 +16,16 @@ export default function AiChat() {
   const [seconds, setSeconds] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState<'id-ID' | 'en-US'>('id-ID');
+  const [transcribedText, setTranscribedText] = useState("");
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const timerRef = useRef<number | null>(null);
   const { push } = useNotifications();
 
   const {
     transcript,
-    isListening,
-    isSupported: isSpeechSupported,
-    error: speechError,
-    start: startRecognition,
-    stop: stopRecognition,
-    reset: resetTranscript,
+    listening,
+    browserSupportsSpeechRecognition,
+    resetTranscript,
   } = useSpeechRecognition();
 
   useEffect(() => {
@@ -39,51 +40,79 @@ export default function AiChat() {
   const formatTime = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  const stopRecording = async (sendIt: boolean) => {
-    setRecording(false);
-    stopRecognition();
+  const stopRecording = () => {
+    SpeechRecognition.stopListening();
     
     if (timerRef.current) window.clearInterval(timerRef.current);
 
-    if (sendIt && transcript.trim()) {
-      const userMsgId = Date.now();
-      const userMsg: Msg = { id: userMsgId, from: "user", text: transcript };
-
-      setMessages((m) => [...m, userMsg]);
-      setIsLoading(true);
-
-      try {
-        const reply = await sendChatMessage(transcript);
-        const botMsg: Msg = { id: userMsgId + 1, from: "bot", text: reply };
-        setMessages((m) => [...m, botMsg]);
-        push({ 
-          source: "ai", 
-          title: "Voice message sent", 
-          body: `Duration ${formatTime(seconds)}` 
-        });
-      } catch (error) {
-        console.error('Voice chat error:', error);
-        const errorMsg: Msg = {
-          id: userMsgId + 1,
-          from: "bot",
-          text: "Maaf, terjadi kesalahan. Silakan coba lagi.",
-        };
-        setMessages((m) => [...m, errorMsg]);
-        push({ source: "ai", title: "Error", body: "Gagal mengirim pesan suara" });
-      } finally {
-        setIsLoading(false);
-        resetTranscript();
+    // Stop and cleanup audio stream
+    if (mediaRecorder) {
+      if (mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
       }
-    } else if (sendIt && !transcript.trim()) {
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setMediaRecorder(null);
+    }
+
+    if (transcript.trim()) {
+      // Save transcript for review, keep modal open
+      setTranscribedText(transcript);
+      setRecording(false);
+      push({ 
+        source: "ai", 
+        title: "Voice recorded", 
+        body: `Duration ${formatTime(seconds)}. Choose to send or edit.` 
+      });
+    } else {
+      // No speech detected, close modal
+      setRecording(false);
+      setTranscribedText("");
       push({ 
         source: "ai", 
         title: "No speech detected", 
         body: "Tidak ada suara yang terdeteksi" 
       });
-      resetTranscript();
-    } else {
-      resetTranscript();
     }
+    
+    resetTranscript();
+  };
+
+  const sendFromModal = async () => {
+    const text = transcribedText.trim();
+    if (!text || isLoading) return;
+
+    const userMsgId = Date.now();
+    const userMsg: Msg = { id: userMsgId, from: "user", text };
+
+    setMessages((m) => [...m, userMsg]);
+    setTranscribedText("");
+    setIsLoading(true);
+
+    try {
+      const response = await sendChatMessage(text, language);
+      const botMsg: Msg = { id: userMsgId + 1, from: "bot", text: response.reply };
+      setMessages((m) => [...m, botMsg]);
+      push({ source: "ai", title: "Mosens replied", body: response.reply });
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Maaf, terjadi kesalahan. Silakan coba lagi.";
+      const errorMsg: Msg = {
+        id: userMsgId + 1,
+        from: "bot",
+        text: errorMessage,
+      };
+      setMessages((m) => [...m, errorMsg]);
+      push({ source: "ai", title: "Error", body: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    if (transcribedText.trim()) {
+      setDraft(transcribedText);
+    }
+    setTranscribedText("");
   };
 
   const send = async () => {
@@ -98,36 +127,58 @@ export default function AiChat() {
     setIsLoading(true);
 
     try {
-      const reply = await sendChatMessage(text);
-      const botMsg: Msg = { id: userMsgId + 1, from: "bot", text: reply };
+      const response = await sendChatMessage(text, language);
+      const botMsg: Msg = { id: userMsgId + 1, from: "bot", text: response.reply };
       setMessages((m) => [...m, botMsg]);
-      push({ source: "ai", title: "Mosens replied", body: reply });
+      push({ source: "ai", title: "Mosens replied", body: response.reply });
     } catch (error) {
       console.error('Chat error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Maaf, terjadi kesalahan. Silakan coba lagi.";
       const errorMsg: Msg = {
         id: userMsgId + 1,
         from: "bot",
-        text: "Maaf, terjadi kesalahan. Silakan coba lagi.",
+        text: errorMessage,
       };
       setMessages((m) => [...m, errorMsg]);
-      push({ source: "ai", title: "Error", body: "Gagal mengirim pesan" });
+      push({ source: "ai", title: "Error", body: errorMessage });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const startRecordingWithLanguage = () => {
-    if (!isSpeechSupported) {
+  const startRecordingWithLanguage = async () => {
+    if (!browserSupportsSpeechRecognition) {
       push({
         source: "ai",
         title: "Not supported",
-        body: "Browser Anda tidak mendukung voice recording",
+        body: "Voice recording only works in Chrome/Edge",
       });
       return;
     }
     
-    setRecording(true);
-    startRecognition(language);
+    try {
+      // Capture audio stream for waveform visualization
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      
+      setRecording(true);
+      setTranscribedText("");
+      resetTranscript();
+      
+      // Start speech recognition
+      SpeechRecognition.startListening({ 
+        language: language,
+        continuous: true 
+      });
+    } catch (error) {
+      console.error('Microphone access error:', error);
+      push({
+        source: "ai",
+        title: "Microphone access denied",
+        body: "Please allow microphone access to record voice",
+      });
+    }
   };
 
   return (
@@ -182,70 +233,89 @@ export default function AiChat() {
         )}
       </div>
 
-      {recording ? (
-        <div className="sticky bottom-20 md:bottom-4 space-y-2">
+      {recording || transcribedText ? (
+        <ErrorBoundary
+          fallback={
+            <div className="sticky bottom-20 md:bottom-4 bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 font-medium">Voice recording error</p>
+              <p className="text-red-600 text-sm mt-1">Please refresh the page to try again</p>
+            </div>
+          }
+        >
+          <div className="sticky bottom-20 md:bottom-4 space-y-2">
           {/* Transcript display */}
-          {transcript && (
+          {(transcript || transcribedText) && (
             <div className="bg-white rounded-2xl border border-[#EFEFF3] shadow-sm px-4 py-3">
               <p className="font-['Nunito'] text-sm text-[#1f1f1f] leading-relaxed">
-                {transcript}
+                {recording ? transcript : transcribedText}
               </p>
             </div>
           )}
           
-          {/* Recording controls */}
-          <div className="bg-white rounded-full border border-[#C7D2FE] shadow-[0_8px_24px_-12px_rgba(17,24,39,0.06)] flex items-center gap-3 pl-3 pr-2 py-2">
-            <button
-              type="button"
-              onClick={() => stopRecording(false)}
-              className="size-10 rounded-full bg-[#FADCD9] text-[#EC2735] grid place-items-center hover:bg-[#f7c8c4] transition-colors"
-              aria-label="Cancel recording"
-            >
-              <X className="size-4" />
-            </button>
-            <div className="flex-1 flex items-center gap-3 min-w-0">
-              <span className="relative flex items-center justify-center">
-                <span className="absolute inline-flex size-3 rounded-full bg-[#EC2735]/40 animate-ping" />
-                <span className="relative inline-flex size-2.5 rounded-full bg-[#EC2735]" />
-              </span>
-              <div className="flex-1 flex items-center gap-[3px] h-8 overflow-hidden">
-                {Array.from({ length: 28 }).map((_, i) => (
-                  <motion.span
-                    key={i}
-                    className="w-[3px] rounded-full bg-[#0063F3]"
-                    animate={{ height: ["20%", "90%", "35%", "70%", "20%"] }}
-                    transition={{
-                      duration: 1.1 + (i % 5) * 0.15,
-                      repeat: Infinity,
-                      delay: (i % 7) * 0.08,
-                      ease: "easeInOut",
-                    }}
-                    style={{ height: "30%" }}
-                  />
-                ))}
+          {recording ? (
+            /* Recording mode: waveform + stop button */
+            <div className="bg-white rounded-full border border-[#C7D2FE] shadow-[0_8px_24px_-12px_rgba(17,24,39,0.06)] flex items-center gap-3 pl-3 pr-2 py-2">
+              <button
+                type="button"
+                onClick={stopRecording}
+                className="size-10 rounded-full bg-[#FADCD9] text-[#EC2735] grid place-items-center hover:bg-[#f7c8c4] transition-colors"
+                aria-label="Cancel recording"
+              >
+                <X className="size-4" />
+              </button>
+              <div className="flex-1 flex items-center gap-3 min-w-0">
+                <span className="relative flex items-center justify-center">
+                  <span className="absolute inline-flex size-3 rounded-full bg-[#EC2735]/40 animate-ping" />
+                  <span className="relative inline-flex size-2.5 rounded-full bg-[#EC2735]" />
+                </span>
+                <div className="flex-1 flex items-center h-8 overflow-hidden">
+                  {mediaRecorder && (
+                    <LiveAudioVisualizer
+                      mediaRecorder={mediaRecorder}
+                      width={200}
+                      height={32}
+                      barWidth={3}
+                      gap={3}
+                      barColor="#0063F3"
+                    />
+                  )}
+                </div>
+                <span className="font-['Nunito'] font-semibold text-[#1f1f1f] text-sm tabular-nums">
+                  {formatTime(seconds)}
+                </span>
               </div>
-              <span className="font-['Nunito'] font-semibold text-[#1f1f1f] text-sm tabular-nums">
-                {formatTime(seconds)}
-              </span>
+              <button
+                type="button"
+                onClick={stopRecording}
+                className="size-12 rounded-full bg-red-500 text-white grid place-items-center hover:bg-red-600 transition-colors"
+                aria-label="Stop recording"
+              >
+                <Square className="size-5 fill-current" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => stopRecording(true)}
-              disabled={!transcript.trim()}
-              className="size-10 rounded-full bg-[#0063F3] text-white grid place-items-center hover:bg-[#0052cc] transition-colors disabled:opacity-40"
-              aria-label="Send voice note"
-            >
-              <Check className="size-4" />
-            </button>
-          </div>
-          
-          {/* Error display */}
-          {speechError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              <p className="font-['Nunito'] text-sm text-red-600">{speechError}</p>
+          ) : (
+            /* Review mode: Send + Edit buttons */
+            <div className="bg-white rounded-full border border-[#EFEFF3] shadow-[0_8px_24px_-12px_rgba(17,24,39,0.06)] flex items-center gap-2 px-3 py-2">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="flex-1 px-4 py-2.5 rounded-full border border-[#EFEFF3] font-['Nunito'] text-sm font-medium text-[#1f1f1f] hover:bg-gray-50 transition-colors"
+              >
+                Edit in Input
+              </button>
+              <button
+                type="button"
+                onClick={sendFromModal}
+                disabled={isLoading}
+                className="flex-1 px-4 py-2.5 rounded-full bg-[#0063F3] text-white font-['Nunito'] text-sm font-medium hover:bg-[#0052cc] transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                <Send className="size-4" />
+                Send to AI
+              </button>
             </div>
           )}
         </div>
+        </ErrorBoundary>
       ) : (
         <form
           onSubmit={(e) => {
@@ -294,14 +364,14 @@ export default function AiChat() {
             <button
               type="button"
               onClick={startRecordingWithLanguage}
-              disabled={isLoading || !isSpeechSupported}
+              disabled={isLoading || !browserSupportsSpeechRecognition}
               className={`size-10 rounded-full grid place-items-center transition-colors ${
-                isSpeechSupported
+                browserSupportsSpeechRecognition
                   ? 'bg-[#EEF2FF] text-[#3B5BDB] hover:bg-[#dde4ff]'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               } disabled:opacity-40`}
-              aria-label={isSpeechSupported ? "Record voice" : "Voice recording not supported"}
-              title={isSpeechSupported ? "Record voice" : "Voice recording not supported on this browser"}
+              aria-label={browserSupportsSpeechRecognition ? "Record voice" : "Voice recording not supported"}
+              title={browserSupportsSpeechRecognition ? "Record voice" : "Voice recording only works in Chrome/Edge"}
             >
               <Mic className="size-4" />
             </button>
