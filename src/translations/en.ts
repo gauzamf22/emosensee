@@ -1,0 +1,282 @@
+export const en = {
+  // App navigation
+  nav: {
+    home: "Home",
+    journey: "Journey",
+    ai: "AI Chat",
+    support: "Support",
+    profile: "Profile",
+  },
+
+  // Home page
+  home: {
+    hi: "Hi",
+    greetings: {
+      morning: "Good morning",
+      afternoon: "Good afternoon",
+      evening: "Good evening",
+    },
+    greeting: "Hello",
+    howAreYouFeeling: "How are you feeling today?",
+    moodPrompt: "Select your mood",
+    moods: {
+      happy: "Happy",
+      neutral: "Neutral",
+      sad: "Sad",
+      anxious: "Anxious",
+      angry: "Angry",
+    },
+    quickActions: {
+      title: "Quick Actions",
+      journaling: "Journaling",
+      nearby: "Nearby Resources",
+      emergency: "Emergency Help",
+    },
+    community: "Community Support",
+    aiChat: "Talk to AI",
+    aiChatDesc: "Get instant support",
+    dailyMood: "Daily Mood",
+    moodTrends: "Mood Trends",
+    insight: {
+      title: "Insight",
+      personalizedInsight: "Personalized Insight",
+      placeholder: "Start journaling or chatting to get your daily insight",
+      loading: "Loading insight...",
+      empty: "No insight available yet",
+    },
+    moodTracker: {
+      title: "How are you feeling today?",
+      subtitle: "Track your emotional journey",
+      error: "Error",
+      signInRequired: "Please sign in to track your mood",
+      checkedIn: "Mood checked in",
+      logged: "You logged",
+      saveFailed: "Failed to save mood",
+    },
+    notifications: {
+      title: "Notifications",
+      markAllRead: "Mark all as read",
+      clearAll: "Clear all",
+      disabled: "Notifications are disabled",
+      empty: "No notifications",
+    },
+    recentActivities: "Recent Activities",
+    viewAll: "View All",
+  },
+
+  // Journaling
+  journaling: {
+    title: "Journaling",
+    subtitle: "Express your thoughts and emotions safely here!",
+    titlePlaceholder: "Title",
+    descPlaceholder: "Descriptions...",
+    save: "Save",
+    saving: "Saving...",
+    yourJournal: "Your Journal",
+    week: "Week",
+    loadingJournals: "Loading journals...",
+    noJournals: "No journals yet. Start writing your first entry!",
+    loadMore: "Load More",
+    loading: "Loading...",
+    validationError: "Validation error",
+    validationMessage: "Title and description are required",
+    saved: "Journal saved",
+    savedMessage: "Your journal entry has been saved successfully",
+    error: "Failed to save journal",
+    loadError: "Failed to load journals",
+  },
+
+  // Support
+  support: {
+    title: "Support",
+    subtitle: "Support for your emotional well-being!",
+    journaling: "Journaling",
+    journalingDesc: "Express your thoughts and emotions safely",
+    community: "Community",
+    communityDesc: "Connect with supportive people",
+    nearby: "Nearby Service",
+    nearbyDesc: "Locate professional services near you",
+    emergency: "Emergency Help",
+    emergencyDesc: "Access urgent support resources.",
+    learn: "Learn",
+    learnDesc: "Understanding & education emotions",
+    grow: "Grow",
+    growDesc: "Self-improvement & emotional habits",
+    opened: "Opened",
+  },
+
+  // Community
+  community: {
+    title: "Community Support",
+    subtitle: "Connect with others who understand",
+    placeholder: "Share your thoughts...",
+    post: "Post",
+    noMessages: "No messages yet",
+  },
+
+  // Nearby
+  nearby: {
+    title: "Nearby Resources",
+    subtitle: "Find local mental health support",
+    searchPlaceholder: "Search for resources...",
+    noResults: "No resources found",
+  },
+
+  // Emergency
+  emergency: {
+    title: "Emergency Help",
+    subtitle: "Immediate assistance available 24/7",
+    hotline: "Crisis Hotline",
+    call: "Call Now",
+    text: "Text Support",
+    chat: "Online Chat",
+  },
+
+  // AI Chat
+  aiChat: {
+    title: "AI Chat",
+    subtitle: "Talk to our AI assistant",
+    greetingWithName: "Hi, {name}!",
+    greetingTimeOfDay: "Good day!",
+    howAreYouFeeling: "How are you feeling today?",
+    typeMessage: "Type a message...",
+    recordVoice: "Record voice",
+    voiceNotSupported: "Voice recording not supported",
+    voiceNotSupportedTitle: "Voice recording only works in Chrome/Edge",
+    mosensTyping: "Mosens is typing",
+    mosensReplied: "Mosens replied",
+    voiceRecorded: "Voice recorded",
+    voiceRecordedBody: "Duration {duration}. Choose to send or edit.",
+    noSpeechDetected: "No speech detected",
+    noSpeechDetectedBody: "No voice was detected",
+    notSupported: "Not supported",
+    notSupportedBody: "Voice recording only works in Chrome/Edge",
+    micAccessDenied: "Microphone access denied",
+    micAccessDeniedBody: "Please allow microphone access to record voice",
+    editInInput: "Edit in Input",
+    sendToAI: "Send to AI",
+    voiceRecordingError: "Voice recording error",
+    voiceRecordingErrorBody: "Please refresh the page to try again",
+    error: "Error",
+    errorOccurred: "Sorry, an error occurred. Please try again.",
+  },
+
+  // Profile
+  profile: {
+    title: "Profile",
+    subtitle: "Manage your account",
+    personalInfo: "Personal Information",
+    username: "Username",
+    email: "Email",
+    settings: "Settings",
+    activities: "Recent Activities",
+    logout: "Logout",
+  },
+
+  // Settings
+  settings: {
+    title: "Settings",
+    personalInfo: "Personal Information",
+    username: "Username",
+    email: "Email",
+    password: "Password",
+    language: "Language",
+    english: "English",
+    indonesian: "Bahasa Indonesia",
+    preference: "Preference",
+    notification: "Notification",
+    privacy: "Privacy",
+  },
+
+  // Reset Credentials
+  resetCredentials: {
+    title: "Reset Credentials",
+    subtitle: "Update Your Credentials",
+    description: "Change your username or password",
+    currentPassword: "Current Password",
+    newUsername: "New Username (optional)",
+    newPassword: "New Password (optional)",
+    confirmPassword: "Confirm New Password",
+    submit: "Update Credentials",
+    updating: "Updating...",
+    updateButton: "Update",
+    cancel: "Cancel",
+    note: "Leave fields empty to keep current values",
+    success: "Credentials updated successfully",
+    placeholders: {
+      currentPassword: "Enter current password",
+      newUsername: "Enter new username",
+      newPassword: "Enter new password",
+      confirmPassword: "Re-enter new password",
+    },
+    errors: {
+      currentPasswordRequired: "Current password is required",
+      provideUsernameOrPassword: "Please provide at least a new username or new password",
+      usernameTooShort: "Username must be at least 3 characters",
+      passwordTooShort: "Password must be at least 8 characters",
+      passwordMismatch: "Passwords do not match",
+      invalidCurrentPassword: "Current password is incorrect",
+      updateFailed: "Failed to update credentials",
+      unexpectedError: "An unexpected error occurred",
+    },
+  },
+
+  // Auth
+  auth: {
+    welcome: "Welcome to EmoSense",
+    subtitle: "Your mental wellness companion",
+    login: "Login",
+    signup: "Sign Up",
+    email: "Email",
+    emailPlaceholder: "Enter your email",
+    password: "Password",
+    passwordPlaceholder: "Enter your password",
+    username: "Username",
+    usernamePlaceholder: "Choose a username",
+    confirmPassword: "Confirm Password",
+    confirmPasswordPlaceholder: "Re-enter your password",
+    forgotPassword: "Forgot password?",
+    noAccount: "Don't have an account?",
+    hasAccount: "Already have an account?",
+    errors: {
+      invalidEmail: "Invalid email address",
+      passwordTooShort: "Password must be at least 6 characters",
+      passwordMismatch: "Passwords do not match",
+      usernameTooShort: "Username must be at least 3 characters",
+      loginFailed: "Login failed",
+      signupFailed: "Sign up failed",
+    },
+  },
+
+  // Recent Activities
+  activities: {
+    title: "Recent Activities",
+    subtitle: "Your activity history",
+    noActivities: "No activities yet",
+    loadMore: "Load More",
+    moodCheckIn: "Mood Check-in",
+    time: {
+      justNow: "Just now",
+      minutesAgo: "{count} minutes ago",
+      hoursAgo: "{count} hours ago",
+      daysAgo: "{count} days ago",
+    },
+  },
+
+  // Common
+  common: {
+    loading: "Loading...",
+    error: "Error",
+    success: "Success",
+    save: "Save",
+    cancel: "Cancel",
+    delete: "Delete",
+    edit: "Edit",
+    back: "Back",
+    next: "Next",
+    done: "Done",
+    close: "Close",
+  },
+};
+
+export type Translation = typeof en;

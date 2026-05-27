@@ -1,7 +1,19 @@
-import { Settings as SettingsIcon, History, ChevronRight, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings as SettingsIcon, ChevronRight, LogOut } from "lucide-react";
 import { useNotifications } from "./notifications";
+import { supabase } from "@/lib/supabase";
+import { useTranslation } from "../translations";
 
-type Action = "settings" | "activities";
+type Action = "settings" | "activities" | "home" | "journaling";
+
+type Activity = {
+  type: "mood" | "journal";
+  id: string;
+  timestamp: Date;
+  mood?: string;
+  title?: string;
+  preview?: string;
+};
 
 function Row({
   icon,
@@ -28,41 +40,231 @@ function Row({
   );
 }
 
-export default function Profile({ onOpen }: { onOpen?: (a: Action) => void }) {
+function ActivityItem({ 
+  activity, 
+  onClick, 
+  formatTime 
+}: { 
+  activity: Activity; 
+  onClick: () => void;
+  formatTime: (date: Date) => string;
+}) {
+  const { t } = useTranslation();
+  
+  if (activity.type === "mood") {
+    return (
+      <button
+        onClick={onClick}
+        className="w-full bg-white rounded-xl px-4 py-3 flex items-center justify-between border border-[#EFEFF3] hover:bg-[#F8F9FC] transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{activity.mood}</span>
+          <div className="flex flex-col items-start">
+            <span className="font-['Nunito'] text-sm text-[#1e1e1e]">{t.activities.moodCheckIn}</span>
+            <span className="font-['Nunito'] text-xs text-[#808080]">{formatTime(activity.timestamp)}</span>
+          </div>
+        </div>
+        <ChevronRight className="size-4 text-[#808080]" />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full bg-white rounded-xl px-4 py-3 flex items-center justify-between border border-[#EFEFF3] hover:bg-[#F8F9FC] transition-colors"
+    >
+      <div className="flex flex-col items-start flex-1 min-w-0">
+        <span className="font-['Nunito'] font-medium text-sm text-[#1e1e1e] truncate w-full">{activity.title}</span>
+        <span className="font-['Nunito'] text-xs text-[#808080] truncate w-full">{activity.preview}</span>
+        <span className="font-['Nunito'] text-xs text-[#808080] mt-1">{formatTime(activity.timestamp)}</span>
+      </div>
+      <ChevronRight className="size-4 text-[#808080] ml-2 flex-shrink-0" />
+    </button>
+  );
+}
+
+export default function Profile({ 
+  onOpen, 
+  session 
+}: { 
+  onOpen?: (a: Action) => void;
+  session?: any;
+}) {
   const { push } = useNotifications();
+  const { t } = useTranslation();
+  
+  const username = session?.user?.user_metadata?.username || "User";
+  const email = session?.user?.email || "";
+  const avatarInitial = username[0]?.toUpperCase() || "U";
+  
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  
   const go = (a: Action, label: string) => {
     push({ source: "profile", title: `${label} opened` });
     onOpen?.(a);
   };
+
+  const formatRelativeTime = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return t.activities.time.justNow;
+    if (diffMins < 60) return t.activities.time.minutesAgo.replace("{count}", diffMins.toString());
+    if (diffHours < 24) return t.activities.time.hoursAgo.replace("{count}", diffHours.toString());
+    return t.activities.time.daysAgo.replace("{count}", diffDays.toString());
+  };
+
+  const fetchActivities = async (pageNum: number) => {
+    if (!session?.user?.id) return;
+    
+    setLoading(true);
+    try {
+      const offset = pageNum * 10;
+      
+      // Fetch mood entries
+      const { data: moods, error: moodError } = await supabase
+        .from("mood_entries")
+        .select("mood, created_at")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + 9);
+
+      if (moodError) throw moodError;
+
+      // Fetch journal entries
+      const { data: journals, error: journalError } = await supabase
+        .from("journal_entries")
+        .select("id, title, description, created_at")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + 9);
+
+      if (journalError) throw journalError;
+
+      // Combine and sort
+      const combined: Activity[] = [
+        ...(moods || []).map(m => ({
+          type: "mood" as const,
+          id: `mood-${m.created_at}`,
+          timestamp: new Date(m.created_at),
+          mood: m.mood,
+        })),
+        ...(journals || []).map(j => ({
+          type: "journal" as const,
+          id: j.id,
+          timestamp: new Date(j.created_at),
+          title: j.title,
+          preview: j.description?.substring(0, 50) || "",
+        })),
+      ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10);
+
+      if (pageNum === 0) {
+        setActivities(combined);
+      } else {
+        setActivities(prev => [...prev, ...combined]);
+      }
+
+      setHasMore(combined.length === 10);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActivities(0);
+  }, [session?.user?.id]);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      push({ source: "profile", title: t.profile.logoutSuccess });
+    } catch (error) {
+      console.error('Logout error:', error);
+      push({ source: "profile", title: t.profile.logoutFailed, body: t.profile.tryAgain });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8 -mt-2">
       <div className="flex flex-col items-center gap-4 pt-4">
         <div className="size-24 sm:size-28 rounded-full bg-gradient-to-br from-[#A7C7E7] to-[#7A9E7E] grid place-items-center text-white font-['Poppins'] font-bold text-2xl shadow-md">
-          LH
+          {avatarInitial}
         </div>
         <div className="text-center">
-          <h2 className="font-['Nunito'] font-bold text-[#4d4d4d] text-base">Layla Holmes</h2>
+          <h2 className="font-['Nunito'] font-bold text-[#4d4d4d] text-base">{username}</h2>
           <p className="font-['Nunito'] font-medium text-[#808080] text-xs mt-1">
-            laylaholmes@gmail.com
+            {email}
           </p>
         </div>
       </div>
 
+      {/* Recent Activities Section */}
+      <div className="flex flex-col gap-3 max-w-xl w-full mx-auto">
+        <h3 className="font-['Poppins'] font-semibold text-[#333] text-lg px-2">
+          {t.activities.title}
+        </h3>
+        
+        {activities.length === 0 && !loading && (
+          <div className="bg-white rounded-xl px-4 py-8 text-center border border-[#EFEFF3]">
+            <p className="font-['Nunito'] text-sm text-[#808080]">{t.activities.noActivities}</p>
+          </div>
+        )}
+
+        {activities.map((activity) => (
+          <ActivityItem
+            key={activity.id}
+            activity={activity}
+            onClick={() => {
+              if (activity.type === "mood") {
+                go("home", "Home");
+              } else {
+                go("journaling", "Journaling");
+              }
+            }}
+            formatTime={formatRelativeTime}
+          />
+        ))}
+
+        {hasMore && activities.length > 0 && (
+          <button
+            onClick={() => {
+              const nextPage = page + 1;
+              setPage(nextPage);
+              fetchActivities(nextPage);
+            }}
+            disabled={loading}
+            className="w-full bg-[#4355FF] text-white rounded-xl px-4 py-3 font-['Nunito'] text-sm hover:bg-[#3445e6] transition-colors disabled:opacity-50"
+          >
+            {loading ? t.common.loading : t.activities.loadMore}
+          </button>
+        )}
+      </div>
+
+      {/* Settings Section */}
       <div className="flex flex-col gap-3 max-w-xl w-full mx-auto">
         <Row
           icon={<SettingsIcon className="size-[18px]" />}
-          label="Setting"
-          onClick={() => go("settings", "Settings")}
-        />
-        <Row
-          icon={<History className="size-[18px]" />}
-          label="Recent Activities"
-          onClick={() => go("activities", "Recent Activities")}
+          label={t.profile.settings}
+          onClick={() => go("settings", t.profile.settings)}
         />
       </div>
 
       <div className="max-w-xl w-full mx-auto mt-auto">
-        <Row icon={<LogOut className="size-[18px]" />} label="Log out" danger />
+        <Row 
+          icon={<LogOut className="size-[18px]" />} 
+          label={t.profile.logout} 
+          danger 
+          onClick={handleLogout}
+        />
       </div>
     </div>
   );

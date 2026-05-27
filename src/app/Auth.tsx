@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { useTranslation } from "../translations";
 
 type Mode = "login" | "signup";
 

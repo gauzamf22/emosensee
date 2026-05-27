@@ -1,0 +1,282 @@
+import { Translation } from "./en";
+
+export const id: Translation = {
+  // App navigation
+  nav: {
+    home: "Beranda",
+    journey: "Perjalanan",
+    ai: "Obrolan AI",
+    support: "Dukungan",
+    profile: "Profil",
+  },
+
+  // Home page
+  home: {
+    hi: "Hai",
+    greetings: {
+      morning: "Selamat pagi",
+      afternoon: "Selamat siang",
+      evening: "Selamat malam",
+    },
+    greeting: "Halo",
+    howAreYouFeeling: "Bagaimana perasaanmu hari ini?",
+    moodPrompt: "Pilih suasana hatimu",
+    moods: {
+      happy: "Senang",
+      neutral: "Netral",
+      sad: "Sedih",
+      anxious: "Cemas",
+      angry: "Marah",
+    },
+    quickActions: {
+      title: "Aksi Cepat",
+      journaling: "Jurnal",
+      nearby: "Sumber Daya Terdekat",
+      emergency: "Bantuan Darurat",
+    },
+    community: "Dukungan Komunitas",
+    aiChat: "Bicara dengan AI",
+    aiChatDesc: "Dapatkan dukungan instan",
+    dailyMood: "Suasana Hati Harian",
+    moodTrends: "Tren Suasana Hati",
+    insight: {
+      title: "Wawasan",
+      personalizedInsight: "Wawasan Pribadi",
+      placeholder: "Mulai menulis jurnal atau mengobrol untuk mendapatkan wawasan harianmu",
+      loading: "Memuat wawasan...",
+      empty: "Belum ada wawasan tersedia",
+    },
+    moodTracker: {
+      title: "Bagaimana perasaanmu hari ini?",
+      subtitle: "Lacak perjalanan emosionalmu",
+      error: "Kesalahan",
+      signInRequired: "Silakan masuk untuk melacak suasana hatimu",
+      checkedIn: "Suasana hati tercatat",
+      logged: "Kamu mencatat",
+      saveFailed: "Gagal menyimpan suasana hati",
+    },
+    notifications: {
+      title: "Notifikasi",
+      markAllRead: "Tandai semua sudah dibaca",
+      clearAll: "Hapus semua",
+      disabled: "Notifikasi dinonaktifkan",
+      empty: "Tidak ada notifikasi",
+    },
+    recentActivities: "Aktivitas Terkini",
+    viewAll: "Lihat Semua",
+  },
+
+  // Journaling
+  journaling: {
+    title: "Jurnal",
+    subtitle: "Ungkapkan pikiran dan emosimu dengan aman di sini!",
+    titlePlaceholder: "Judul",
+    descPlaceholder: "Deskripsi...",
+    save: "Simpan",
+    saving: "Menyimpan...",
+    yourJournal: "Jurnalmu",
+    week: "Minggu",
+    loadingJournals: "Memuat jurnal...",
+    noJournals: "Belum ada jurnal. Mulai menulis entri pertamamu!",
+    loadMore: "Muat Lebih Banyak",
+    loading: "Memuat...",
+    validationError: "Kesalahan validasi",
+    validationMessage: "Judul dan deskripsi wajib diisi",
+    saved: "Jurnal tersimpan",
+    savedMessage: "Entri jurnalmu berhasil disimpan",
+    error: "Gagal menyimpan jurnal",
+    loadError: "Gagal memuat jurnal",
+  },
+
+  // Support
+  support: {
+    title: "Dukungan",
+    subtitle: "Dukungan untuk kesejahteraan emosionalmu!",
+    journaling: "Jurnal",
+    journalingDesc: "Ungkapkan pikiran dan emosimu dengan aman",
+    community: "Komunitas",
+    communityDesc: "Terhubung dengan orang-orang yang mendukung",
+    nearby: "Layanan Terdekat",
+    nearbyDesc: "Temukan layanan profesional di dekatmu",
+    emergency: "Bantuan Darurat",
+    emergencyDesc: "Akses sumber daya dukungan mendesak.",
+    learn: "Belajar",
+    learnDesc: "Memahami & edukasi emosi",
+    grow: "Berkembang",
+    growDesc: "Peningkatan diri & kebiasaan emosional",
+    opened: "Membuka",
+  },
+
+  // Community
+  community: {
+    title: "Dukungan Komunitas",
+    subtitle: "Terhubung dengan orang lain yang memahami",
+    placeholder: "Bagikan pikiranmu...",
+    post: "Posting",
+    noMessages: "Belum ada pesan",
+  },
+
+  // Nearby
+  nearby: {
+    title: "Sumber Daya Terdekat",
+    subtitle: "Temukan dukungan kesehatan mental lokal",
+    searchPlaceholder: "Cari sumber daya...",
+    noResults: "Tidak ada sumber daya ditemukan",
+  },
+
+  // Emergency
+  emergency: {
+    title: "Bantuan Darurat",
+    subtitle: "Bantuan segera tersedia 24/7",
+    hotline: "Hotline Krisis",
+    call: "Hubungi Sekarang",
+    text: "Dukungan Teks",
+    chat: "Obrolan Online",
+  },
+
+  // AI Chat
+  aiChat: {
+    title: "Obrolan AI",
+    subtitle: "Bicara dengan asisten AI kami",
+    greetingWithName: "Hai, {name}!",
+    greetingTimeOfDay: "Selamat hari!",
+    howAreYouFeeling: "Bagaimana perasaanmu hari ini?",
+    typeMessage: "Ketik pesan...",
+    recordVoice: "Rekam suara",
+    voiceNotSupported: "Rekaman suara tidak didukung",
+    voiceNotSupportedTitle: "Rekaman suara hanya berfungsi di Chrome/Edge",
+    mosensTyping: "Mosens sedang mengetik",
+    mosensReplied: "Mosens membalas",
+    voiceRecorded: "Suara direkam",
+    voiceRecordedBody: "Durasi {duration}. Pilih untuk mengirim atau mengedit.",
+    noSpeechDetected: "Tidak ada suara terdeteksi",
+    noSpeechDetectedBody: "Tidak ada suara yang terdeteksi",
+    notSupported: "Tidak didukung",
+    notSupportedBody: "Rekaman suara hanya berfungsi di Chrome/Edge",
+    micAccessDenied: "Akses mikrofon ditolak",
+    micAccessDeniedBody: "Harap izinkan akses mikrofon untuk merekam suara",
+    editInInput: "Edit di Input",
+    sendToAI: "Kirim ke AI",
+    voiceRecordingError: "Kesalahan rekaman suara",
+    voiceRecordingErrorBody: "Harap muat ulang halaman untuk mencoba lagi",
+    error: "Kesalahan",
+    errorOccurred: "Maaf, terjadi kesalahan. Silakan coba lagi.",
+  },
+
+  // Profile
+  profile: {
+    title: "Profil",
+    subtitle: "Kelola akunmu",
+    personalInfo: "Informasi Pribadi",
+    username: "Nama Pengguna",
+    email: "Email",
+    settings: "Pengaturan",
+    activities: "Aktivitas Terkini",
+    logout: "Keluar",
+  },
+
+  // Settings
+  settings: {
+    title: "Pengaturan",
+    personalInfo: "Informasi Pribadi",
+    username: "Nama Pengguna",
+    email: "Email",
+    password: "Kata Sandi",
+    language: "Bahasa",
+    english: "English",
+    indonesian: "Bahasa Indonesia",
+    preference: "Preferensi",
+    notification: "Notifikasi",
+    privacy: "Privasi",
+  },
+
+  // Reset Credentials
+  resetCredentials: {
+    title: "Atur Ulang Kredensial",
+    subtitle: "Perbarui Kredensialmu",
+    description: "Ubah nama pengguna atau kata sandimu",
+    currentPassword: "Kata Sandi Saat Ini",
+    newUsername: "Nama Pengguna Baru (opsional)",
+    newPassword: "Kata Sandi Baru (opsional)",
+    confirmPassword: "Konfirmasi Kata Sandi Baru",
+    submit: "Perbarui Kredensial",
+    updating: "Memperbarui...",
+    updateButton: "Perbarui",
+    cancel: "Batal",
+    note: "Biarkan kolom kosong untuk mempertahankan nilai saat ini",
+    success: "Kredensial berhasil diperbarui",
+    placeholders: {
+      currentPassword: "Masukkan kata sandi saat ini",
+      newUsername: "Masukkan nama pengguna baru",
+      newPassword: "Masukkan kata sandi baru",
+      confirmPassword: "Masukkan ulang kata sandi baru",
+    },
+    errors: {
+      currentPasswordRequired: "Kata sandi saat ini diperlukan",
+      provideUsernameOrPassword: "Harap berikan setidaknya nama pengguna atau kata sandi baru",
+      usernameTooShort: "Nama pengguna harus minimal 3 karakter",
+      passwordTooShort: "Kata sandi harus minimal 8 karakter",
+      passwordMismatch: "Kata sandi tidak cocok",
+      invalidCurrentPassword: "Kata sandi saat ini salah",
+      updateFailed: "Gagal memperbarui kredensial",
+      unexpectedError: "Terjadi kesalahan yang tidak terduga",
+    },
+  },
+
+  // Auth
+  auth: {
+    welcome: "Selamat Datang di EmoSense",
+    subtitle: "Pendamping kesehatan mentalmu",
+    login: "Masuk",
+    signup: "Daftar",
+    email: "Email",
+    emailPlaceholder: "Masukkan emailmu",
+    password: "Kata Sandi",
+    passwordPlaceholder: "Masukkan kata sandimu",
+    username: "Nama Pengguna",
+    usernamePlaceholder: "Pilih nama pengguna",
+    confirmPassword: "Konfirmasi Kata Sandi",
+    confirmPasswordPlaceholder: "Masukkan ulang kata sandimu",
+    forgotPassword: "Lupa kata sandi?",
+    noAccount: "Belum punya akun?",
+    hasAccount: "Sudah punya akun?",
+    errors: {
+      invalidEmail: "Alamat email tidak valid",
+      passwordTooShort: "Kata sandi harus minimal 6 karakter",
+      passwordMismatch: "Kata sandi tidak cocok",
+      usernameTooShort: "Nama pengguna harus minimal 3 karakter",
+      loginFailed: "Gagal masuk",
+      signupFailed: "Gagal mendaftar",
+    },
+  },
+
+  // Recent Activities
+  activities: {
+    title: "Aktivitas Terkini",
+    subtitle: "Riwayat aktivitasmu",
+    noActivities: "Belum ada aktivitas",
+    loadMore: "Muat Lebih Banyak",
+    moodCheckIn: "Cek Suasana Hati",
+    time: {
+      justNow: "Baru saja",
+      minutesAgo: "{count} menit yang lalu",
+      hoursAgo: "{count} jam yang lalu",
+      daysAgo: "{count} hari yang lalu",
+    },
+  },
+
+  // Common
+  common: {
+    loading: "Memuat...",
+    error: "Kesalahan",
+    success: "Berhasil",
+    save: "Simpan",
+    cancel: "Batal",
+    delete: "Hapus",
+    edit: "Edit",
+    back: "Kembali",
+    next: "Selanjutnya",
+    done: "Selesai",
+    close: "Tutup",
+  },
+};

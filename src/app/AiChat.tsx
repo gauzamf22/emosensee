@@ -7,17 +7,12 @@ import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognitio
 import ErrorBoundary from "../components/ErrorBoundary";
 import { LiveAudioVisualizer } from "react-audio-visualize";
 import Logo from "./Logo";
+import { useTranslation } from "../translations";
 
 type Msg = { id: number; from: "user" | "bot"; text: string };
 
-function getTimeBasedGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good Morning";
-  if (hour < 18) return "Good Afternoon";
-  return "Good Evening";
-}
-
 export default function AiChat({ session }: { session?: any }) {
+  const { t, language: appLanguage } = useTranslation();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [recording, setRecording] = useState(false);
@@ -33,8 +28,8 @@ export default function AiChat({ session }: { session?: any }) {
   // Generate dynamic greeting
   const username = session?.user?.user_metadata?.username;
   const greetingText = username 
-    ? `Hi, ${username}!` 
-    : `${getTimeBasedGreeting()}!`;
+    ? t.aiChat.greetingWithName.replace('{name}', username)
+    : t.aiChat.greetingTimeOfDay;
 
   const {
     transcript,
@@ -109,8 +104,8 @@ export default function AiChat({ session }: { session?: any }) {
       setRecording(false);
       push({ 
         source: "ai", 
-        title: "Voice recorded", 
-        body: `Duration ${formatTime(seconds)}. Choose to send or edit.` 
+        title: t.aiChat.voiceRecorded, 
+        body: t.aiChat.voiceRecordedBody.replace('{duration}', formatTime(seconds))
       });
     } else {
       // No speech detected, close modal
@@ -118,8 +113,8 @@ export default function AiChat({ session }: { session?: any }) {
       setTranscribedText("");
       push({ 
         source: "ai", 
-        title: "No speech detected", 
-        body: "Tidak ada suara yang terdeteksi" 
+        title: t.aiChat.noSpeechDetected, 
+        body: t.aiChat.noSpeechDetectedBody
       });
     }
     
@@ -141,17 +136,17 @@ export default function AiChat({ session }: { session?: any }) {
       const response = await sendChatMessage(text, language);
       const botMsg: Msg = { id: userMsgId + 1, from: "bot", text: response.reply };
       setMessages((m) => [...m, botMsg]);
-      push({ source: "ai", title: "Mosens replied", body: response.reply });
+      push({ source: "ai", title: t.aiChat.mosensReplied, body: response.reply });
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Maaf, terjadi kesalahan. Silakan coba lagi.";
+      const errorMessage = error instanceof Error ? error.message : t.aiChat.errorOccurred;
       const errorMsg: Msg = {
         id: userMsgId + 1,
         from: "bot",
         text: errorMessage,
       };
       setMessages((m) => [...m, errorMsg]);
-      push({ source: "ai", title: "Error", body: errorMessage });
+      push({ source: "ai", title: t.aiChat.error, body: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -179,17 +174,17 @@ export default function AiChat({ session }: { session?: any }) {
       const response = await sendChatMessage(text, language);
       const botMsg: Msg = { id: userMsgId + 1, from: "bot", text: response.reply };
       setMessages((m) => [...m, botMsg]);
-      push({ source: "ai", title: "Mosens replied", body: response.reply });
+      push({ source: "ai", title: t.aiChat.mosensReplied, body: response.reply });
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Maaf, terjadi kesalahan. Silakan coba lagi.";
+      const errorMessage = error instanceof Error ? error.message : t.aiChat.errorOccurred;
       const errorMsg: Msg = {
         id: userMsgId + 1,
         from: "bot",
         text: errorMessage,
       };
       setMessages((m) => [...m, errorMsg]);
-      push({ source: "ai", title: "Error", body: errorMessage });
+      push({ source: "ai", title: t.aiChat.error, body: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -199,8 +194,8 @@ export default function AiChat({ session }: { session?: any }) {
     if (!browserSupportsSpeechRecognition) {
       push({
         source: "ai",
-        title: "Not supported",
-        body: "Voice recording only works in Chrome/Edge",
+        title: t.aiChat.notSupported,
+        body: t.aiChat.notSupportedBody,
       });
       return;
     }
@@ -224,8 +219,8 @@ export default function AiChat({ session }: { session?: any }) {
       console.error('Microphone access error:', error);
       push({
         source: "ai",
-        title: "Microphone access denied",
-        body: "Please allow microphone access to record voice",
+        title: t.aiChat.micAccessDenied,
+        body: t.aiChat.micAccessDeniedBody,
       });
     }
   };
@@ -254,7 +249,7 @@ export default function AiChat({ session }: { session?: any }) {
               <div>
                 <p className="font-['Poppins'] text-[#0063F3] text-base sm:text-lg">{greetingText}</p>
                 <p className="font-['Poppins'] text-[#1f1f1f] text-base sm:text-lg mt-1">
-                  How are you feeling today?
+                  {t.aiChat.howAreYouFeeling}
                 </p>
               </div>
             </div>
@@ -278,7 +273,7 @@ export default function AiChat({ session }: { session?: any }) {
           <div className="self-start bg-white border border-[#EFEFF3] text-[#1f1f1f] rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] sm:max-w-[60%]">
             <div className="flex items-center gap-2">
               <span className="font-['Nunito'] text-sm text-[#6b7280]">
-                Mosens sedang mengetik
+                {t.aiChat.mosensTyping}
               </span>
               <span className="flex gap-1">
                 <span 
@@ -303,8 +298,8 @@ export default function AiChat({ session }: { session?: any }) {
         <ErrorBoundary
           fallback={
             <div className="sticky bottom-20 md:bottom-4 bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 font-medium">Voice recording error</p>
-              <p className="text-red-600 text-sm mt-1">Please refresh the page to try again</p>
+              <p className="text-red-800 font-medium">{t.aiChat.voiceRecordingError}</p>
+              <p className="text-red-600 text-sm mt-1">{t.aiChat.voiceRecordingErrorBody}</p>
             </div>
           }
         >
@@ -367,7 +362,7 @@ export default function AiChat({ session }: { session?: any }) {
                 onClick={closeModal}
                 className="flex-1 px-4 py-2.5 rounded-full border border-[#EFEFF3] font-['Nunito'] text-sm font-medium text-[#1f1f1f] hover:bg-gray-50 transition-colors"
               >
-                Edit in Input
+                {t.aiChat.editInInput}
               </button>
               <button
                 type="button"
@@ -376,7 +371,7 @@ export default function AiChat({ session }: { session?: any }) {
                 className="flex-1 px-4 py-2.5 rounded-full bg-[#0063F3] text-white font-['Nunito'] text-sm font-medium hover:bg-[#0052cc] transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 <Send className="size-4" />
-                Send to AI
+                {t.aiChat.sendToAI}
               </button>
             </div>
           )}
@@ -424,7 +419,7 @@ export default function AiChat({ session }: { session?: any }) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               disabled={isLoading}
-              placeholder="Type a message..."
+              placeholder={t.aiChat.typeMessage}
               className="flex-1 bg-transparent outline-none font-['Nunito'] text-sm text-[#1f1f1f] placeholder:text-[#c1c1c1] py-2 disabled:opacity-50"
             />
             <button
@@ -436,8 +431,8 @@ export default function AiChat({ session }: { session?: any }) {
                   ? 'bg-[#EEF2FF] text-[#3B5BDB] hover:bg-[#dde4ff]'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               } disabled:opacity-40`}
-              aria-label={browserSupportsSpeechRecognition ? "Record voice" : "Voice recording not supported"}
-              title={browserSupportsSpeechRecognition ? "Record voice" : "Voice recording only works in Chrome/Edge"}
+              aria-label={browserSupportsSpeechRecognition ? t.aiChat.recordVoice : t.aiChat.voiceNotSupported}
+              title={browserSupportsSpeechRecognition ? t.aiChat.recordVoice : t.aiChat.voiceNotSupportedTitle}
             >
               <Mic className="size-4" />
             </button>
