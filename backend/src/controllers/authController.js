@@ -62,12 +62,12 @@ const callback = async (req, res, next) => {
 
     const result = await userService.exchangeCode(code);
 
-    res.status(200).json({
-      success: true,
-      message: 'Google Login berhasil!',
-      token: result.session.access_token,
-      user: result.user
-    });
+    // Redirect to frontend with token and user data
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+    const token = result.session.access_token;
+    const userData = encodeURIComponent(JSON.stringify(result.user));
+    
+    res.redirect(`${frontendUrl}?token=${token}&user=${userData}`);
   } catch (error) {
     next(error);
   }

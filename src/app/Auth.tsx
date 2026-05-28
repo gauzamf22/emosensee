@@ -133,29 +133,32 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
 
   const isSignup = mode === "signup";
 
-  // Handle OAuth callback - prevent infinite loop with useRef
+  // Handle OAuth callback - check for token param from backend redirect
   useEffect(() => {
     const handleOAuthCallback = async () => {
       const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
+      const token = params.get('token');
+      const userStr = params.get('user');
       
       // Prevent processing same callback multiple times
-      if (code && !oauthProcessedRef.current) {
+      if (token && userStr && !oauthProcessedRef.current) {
         oauthProcessedRef.current = true;
         setLoading(true);
-        console.log('[Auth] Processing OAuth callback with code:', code.substring(0, 10) + '...');
+        console.log('[Auth] Processing OAuth callback with token');
         
         try {
-          await authService.handleGoogleCallback(code);
+          const user = JSON.parse(decodeURIComponent(userStr));
+          authService.setToken(token);
+          authService.setUser(user);
           console.log('[Auth] OAuth callback successful');
+          
           // Clear URL params
           window.history.replaceState({}, document.title, window.location.pathname);
           onAuthed();
-        } catch (err: any) {
-          console.error('[Auth] OAuth callback failed:', err);
-          setError(err.response?.data?.message || err.message || "OAuth callback failed");
+        } catch (error) {
+          console.error('[Auth] OAuth callback error:', error);
+          setError('Google login failed. Please try again.');
           setLoading(false);
-          oauthProcessedRef.current = false; // Allow retry
         }
       }
     };
