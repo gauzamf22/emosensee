@@ -21,15 +21,47 @@ export default function Home({
   session?: any;
   onMoodSaved?: () => void;
 }) {
-  const { t } = useTranslation();
+  let t;
+  try {
+    const translation = useTranslation();
+    t = translation.t;
+  } catch (error) {
+    console.error('[Home] useTranslation error:', error);
+    // Fallback to empty translations
+    t = {} as any;
+  }
+
   const [selected, setSelected] = useState<string | null>(null);
   const [todayMood, setTodayMood] = useState<string | null>(null);
   const [loadingMood, setLoadingMood] = useState(true);
   const [insight, setInsight] = useState<DailyInsight | null>(null);
   const [insightLoading, setInsightLoading] = useState(true);
-  const { enabled, items, unread, push, markAllRead, clear } = useNotifications();
+
+  let notificationsHook;
+  try {
+    notificationsHook = useNotifications();
+  } catch (error) {
+    console.error('[Home] useNotifications error:', error);
+    // Fallback to disabled notifications
+    notificationsHook = {
+      enabled: false,
+      items: [],
+      unread: 0,
+      push: () => {},
+      markAllRead: () => {},
+      clear: () => {},
+    };
+  }
+  const { enabled, items, unread, push, markAllRead, clear } = notificationsHook;
+
   const [openPanel, setOpenPanel] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  console.log('[Home] Component mounted', {
+    hasSession: !!session,
+    userId: session?.user?.id,
+    username: session?.user?.username,
+  });
 
   // Dynamic data based on translations
   const QUICK: { key: QuickKey; label: string; img: string; overlay: number }[] = [
@@ -62,28 +94,36 @@ export default function Home({
 
   // Fetch today's mood on mount
   useEffect(() => {
+    console.log('[Home] useEffect: fetchTodayMood started', { userId: session?.user?.id });
+    
     const fetchTodayMood = async () => {
       if (!session?.user?.id) {
+        console.log('[Home] fetchTodayMood: No user ID, skipping');
         setLoadingMood(false);
         return;
       }
 
       try {
         const dateLogged = new Date().toISOString().split('T')[0];
+        console.log('[Home] fetchTodayMood: Fetching for date', dateLogged);
         
         const response = await apiClient.get('/api/moods', {
-          params: { date: dateLogged, limit: 1 }
+          params: { startDate: dateLogged, endDate: dateLogged, limit: 1 }
         });
 
         if (response.data && response.data.length > 0) {
           const moodData = response.data[0];
+          console.log('[Home] fetchTodayMood: Success', { mood: moodData.mood });
           setTodayMood(moodData.mood);
           setSelected(moodData.mood);
+        } else {
+          console.log('[Home] fetchTodayMood: No mood data found');
         }
       } catch (error) {
-        console.error('Error fetching today mood:', error);
+        console.error('[Home] fetchTodayMood: Error', error);
       } finally {
         setLoadingMood(false);
+        console.log('[Home] fetchTodayMood: Complete');
       }
     };
 
@@ -92,11 +132,21 @@ export default function Home({
 
   // Fetch daily insight on mount
   useEffect(() => {
+    console.log('[Home] useEffect: fetchInsight started');
+    
     const fetchInsight = async () => {
       setInsightLoading(true);
-      const data = await getDailyInsight();
-      setInsight(data);
-      setInsightLoading(false);
+      try {
+        const data = await getDailyInsight();
+        console.log('[Home] fetchInsight: Success', { hasData: !!data });
+        setInsight(data);
+      } catch (error) {
+        console.error('[Home] fetchInsight: Error', error);
+        setInsight(null);
+      } finally {
+        setInsightLoading(false);
+        console.log('[Home] fetchInsight: Complete');
+      }
     };
 
     fetchInsight();
@@ -104,15 +154,22 @@ export default function Home({
 
   useEffect(() => {
     if (!openPanel) return;
+    console.log('[Home] useEffect: Click outside listener attached');
     const handler = (e: MouseEvent) => {
       if (!panelRef.current?.contains(e.target as Node)) setOpenPanel(false);
     };
     window.addEventListener("mousedown", handler);
-    return () => window.removeEventListener("mousedown", handler);
+    return () => {
+      console.log('[Home] useEffect: Click outside listener removed');
+      window.removeEventListener("mousedown", handler);
+    };
   }, [openPanel]);
 
   useEffect(() => {
-    if (openPanel && unread > 0) markAllRead();
+    if (openPanel && unread > 0) {
+      console.log('[Home] useEffect: Marking notifications read', { unread });
+      markAllRead();
+    }
   }, [openPanel, unread, markAllRead]);
 
   const onMood = async (key: string, label: string) => {
@@ -141,6 +198,16 @@ export default function Home({
       push({ source: "home", title: t.home.moodTracker.error, body: t.home.moodTracker.saveFailed });
     }
   };
+
+  console.log('[Home] Rendering', {
+    loadingMood,
+    todayMood,
+    selected,
+    insightLoading,
+    hasInsight: !!insight,
+    openPanel,
+    unread,
+  });
 
   return (
     <div className="flex flex-col gap-6 -mt-2">

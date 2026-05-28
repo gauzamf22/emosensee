@@ -41,7 +41,7 @@ export const id: Translation = {
     moodTrends: "Tren Suasana Hati",
     insight: {
       title: "Wawasan",
-      personalizedInsight: "Wawasan Pribadi",
+      personalizedInsight: "Personalized Insight",
       placeholder: "Mulai menulis jurnal atau mengobrol untuk mendapatkan wawasan harianmu",
       loading: "Memuat wawasan...",
       empty: "Belum ada wawasan tersedia",

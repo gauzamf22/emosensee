@@ -4,8 +4,15 @@ import Logo from "./Logo";
 
 export default function Splash({ onDone }: { onDone: () => void }) {
   useEffect(() => {
-    const t = setTimeout(onDone, 2800);
-    return () => clearTimeout(t);
+    console.log('[Splash] Component mounted');
+    const t = setTimeout(() => {
+      console.log('[Splash] Timeout complete, calling onDone');
+      onDone();
+    }, 2800);
+    return () => {
+      console.log('[Splash] Component unmounting');
+      clearTimeout(t);
+    };
   }, [onDone]);
 
   return (
