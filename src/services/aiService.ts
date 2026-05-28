@@ -1,5 +1,5 @@
-import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
-import { authService } from './auth';
+import apiClient, { ApiResponse, handleApiError } from './api';
+import { API_ENDPOINTS } from '../config/api';
 
 interface Analytics {
   emotions: Array<{ label: string; score: number }>;
@@ -13,12 +13,6 @@ interface ChatData {
   analytics: Analytics;
 }
 
-interface ChatResponse {
-  success: boolean;
-  data: ChatData;
-  message?: string;
-}
-
 interface ConversationEntry {
   user_message: string;
   counselor_reply: string;
@@ -29,67 +23,23 @@ interface MemoryData {
   lastUpdated: string | null;
 }
 
-interface MemoryResponse {
-  success: boolean;
-  data: MemoryData;
-  message?: string;
-}
-
 export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-US'): Promise<ChatData> {
-  // Get current auth token
-  const token = authService.getToken();
-  
-  if (!token) {
-    throw new Error('Anda harus login terlebih dahulu');
+  try {
+    const response = await apiClient.post<ApiResponse<ChatData>>(
+      API_ENDPOINTS.AI_CHAT,
+      { message, language }
+    );
+    return response.data.data;
+  } catch (error) {
+    throw handleApiError(error);
   }
-
-  const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AI_CHAT}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({ message, language }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
-  const json: ChatResponse = await response.json();
-  
-  if (!json.success) {
-    throw new Error(json.message || 'API request failed');
-  }
-
-  return json.data;
 }
 
 export async function getMemory(): Promise<MemoryData> {
-  // Get current auth token
-  const token = authService.getToken();
-  
-  if (!token) {
-    throw new Error('Anda harus login terlebih dahulu');
+  try {
+    const response = await apiClient.get<ApiResponse<MemoryData>>('/api/ai/memory');
+    return response.data.data;
+  } catch (error) {
+    throw handleApiError(error);
   }
-
-  const response = await fetch(`${API_BASE_URL}/api/ai/memory`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
-  const json: MemoryResponse = await response.json();
-  
-  if (!json.success) {
-    throw new Error(json.message || 'API request failed');
-  }
-
-  return json.data;
 }
