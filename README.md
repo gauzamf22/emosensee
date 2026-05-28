@@ -13,6 +13,11 @@
 - [Deployment](#deployment)
 
 ---
+## Figma UX : 
+https://www.figma.com/board/lct6tl3F7ZQOiaiQl7By4a/EmoSense-Research?node-id=72-1488&t=vIhI79sxM8kOrNJQ-1
+## Figma UI : 
+https://www.figma.com/design/hKhn7oh4UJxnjFBLgjv37n/EmoSense?node-id=190-2501&t=LFVUhNOFNcHYTHP4-1 
+
 
 ## Overview
 
