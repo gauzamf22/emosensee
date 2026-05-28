@@ -159,3 +159,6 @@
 2026-05-28T16:35:31: [0mGET /api/health [33m404[0m 52.585 ms - 149[0m
 2026-05-28T16:35:32: [0mGET /api/monitoring/health [33m404[0m 0.807 ms - 160[0m
 2026-05-28T16:35:34: [0mGET /api/providers/client [33m404[0m 0.838 ms - 159[0m
+2026-05-28T18:41:37: [0mGET /api/health [33m404[0m 11.760 ms - 149[0m
+2026-05-28T18:41:37: [0mGET /api/monitoring/health [33m404[0m 1.671 ms - 160[0m
+2026-05-28T18:41:39: [0mGET /api/providers/client [33m404[0m 0.306 ms - 159[0m

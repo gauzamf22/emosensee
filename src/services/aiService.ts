@@ -32,6 +32,20 @@ export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-
     
     // Handle both response formats: {data: {...}} or direct {...}
     const data = response.data?.data || response.data;
+    
+    // Handle string response (backend returns data as string directly)
+    if (typeof data === 'string') {
+      return {
+        reply: data,
+        analytics: {
+          emotions: [],
+          keywords: [],
+          severity: 'low',
+          severity_score: 0
+        }
+      };
+    }
+    
     return data;
   } catch (error) {
     throw handleApiError(error);
