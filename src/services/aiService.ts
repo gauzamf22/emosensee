@@ -1,5 +1,5 @@
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
-import { supabase } from '../lib/supabase';
+import { authService } from './auth';
 
 interface Analytics {
   emotions: Array<{ label: string; score: number }>;
@@ -36,10 +36,10 @@ interface MemoryResponse {
 }
 
 export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-US'): Promise<ChatData> {
-  // Get current session token
-  const { data: { session } } = await supabase.auth.getSession();
+  // Get current auth token
+  const token = authService.getToken();
   
-  if (!session?.access_token) {
+  if (!token) {
     throw new Error('Anda harus login terlebih dahulu');
   }
 
@@ -47,7 +47,7 @@ export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({ message, language }),
   });
@@ -66,10 +66,10 @@ export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-
 }
 
 export async function getMemory(): Promise<MemoryData> {
-  // Get current session token
-  const { data: { session } } = await supabase.auth.getSession();
+  // Get current auth token
+  const token = authService.getToken();
   
-  if (!session?.access_token) {
+  if (!token) {
     throw new Error('Anda harus login terlebih dahulu');
   }
 
@@ -77,7 +77,7 @@ export async function getMemory(): Promise<MemoryData> {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
+      'Authorization': `Bearer ${token}`,
     },
   });
 

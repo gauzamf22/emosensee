@@ -1,0 +1,155 @@
+2026-05-27T20:52:42: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-05-27T20:52:42: Server is running on port 5000
+2026-05-27T20:53:48: [0mGET /health [33m404[0m 5.989 ms - 145[0m
+2026-05-27T20:53:54: [0mGET /api/health [33m404[0m 3.215 ms - 149[0m
+2026-05-27T20:54:18: [0mGET /api/auth [33m404[0m 1.561 ms - 147[0m
+2026-05-27T21:00:52: [0mHEAD /api/auth [33m404[0m 3.555 ms - 148[0m
+2026-05-27T21:01:16: [0mHEAD /api/auth/google [32m200[0m 31.076 ms - 251[0m
+2026-05-27T21:04:19: [0mHEAD /api/auth/google [32m200[0m 5.119 ms - 251[0m
+2026-05-27T21:04:44: [0mHEAD /api/ai/chat [33m404[0m 0.627 ms - 151[0m
+2026-05-27T21:04:54: [0mPOST /api/ai/chat [33m401[0m 0.583 ms - 69[0m
+2026-05-27T21:05:13: [0mGET /api/auth/google [32m200[0m 3.944 ms - 251[0m
+2026-05-27T21:07:14: ◇ injected env (4) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-05-27T21:07:15: Server is running on port 5000
+2026-05-27T21:07:33: [0mGET /api/auth/google [32m200[0m 10.069 ms - 248[0m
+2026-05-27T21:09:28: [0mGET /api [33m404[0m 1.301 ms - 142[0m
+2026-05-27T21:11:11: [0mGET /api/insights/daily [32m200[0m 959.769 ms - 67[0m
+2026-05-27T21:11:17: [0mGET /api/insights/daily [36m304[0m 294.212 ms - -[0m
+2026-05-27T21:11:20: [0mGET /api/ai/memory [32m200[0m 223.626 ms - 70[0m
+2026-05-27T21:11:31: [AI Service] Calling Gradio with memory: []
+2026-05-27T21:11:38: [AI Service] Gradio response: {"type":"data","time":"2026-05-27T13:11:38.640Z","data":["{\"counselor_reply\": \"It's totally normal to feel sad sometimes. It sounds like you're going through a tough moment, and that's okay. Would you like to talk about what's on your mind?\", \"analytics\": {\"emotions\": [{\"label\": \"sadness\", \"score\": 0.9127}], \"keywords\": [{\"keyword\": \"[LANGUAGE: EN] i'am sad\", \"score\": 1.0}], \"severity\": \"low\", \"severity_score\": 2}, \"updated_memory\": {\"summary\": \"\", \"history\": [{\"timestamp\": \"2026-05-27T15:11:38.508575\", \"user\": \"[LANGUAGE: EN] i'am sad\", \"ai\": \"It's totally normal to feel sad sometimes. It sounds like you're going through a tough moment, and that's okay. Would you like to talk about what's on your mind?\", \"emotions\": [{\"label\": \"sadness\", \"score\": 0.9127}], \"severity\": \"low\"}], \"emotion_stats\": {\"sadness\": 1}, \"session_count\": 1}}"],"endpoint":"/api_chat","fn_index":32}
+2026-05-27T21:11:38: [0mPOST /api/ai/chat [32m200[0m 10839.604 ms - 356[0m
+2026-05-27T21:11:51: [0mGET /api/insights/daily [32m200[0m 224.878 ms - 658[0m
+2026-05-27T21:11:52: [0mGET /api/ai/memory [32m200[0m 438.059 ms - 474[0m
+2026-05-27T21:12:07: [AI Service] Calling Gradio with memory: {"history":[{"ai":"It's totally normal to feel sad sometimes. It sounds like you're going through a tough moment, and that's okay. Would you like to talk about what's on your mind?","user":"[LANGUAGE: EN] i'am sad","emotions":[{"label":"sadness","score":0.9127}],"severity":"low","timestamp":"2026-05-27T15:11:38.508575"}],"summary":"","emotion_stats":{"sadness":1},"session_count":1}
+2026-05-27T21:12:09: [AI Service] Gradio response: {"type":"data","time":"2026-05-27T13:12:09.840Z","data":["{\"counselor_reply\": \"It's clear that you're really angry right now. That kind of language can be a hint that you're feeling frustrated and upset. What's going on that's making you feel this way?\", \"analytics\": {\"emotions\": [{\"label\": \"anger\", \"score\": 0.8069}], \"keywords\": [{\"keyword\": \"[LANGUAGE: EN] fuck bitch\", \"score\": 1.0}], \"severity\": \"low\", \"severity_score\": 2}, \"updated_memory\": {\"history\": [{\"ai\": \"It's totally normal to feel sad sometimes. It sounds like you're going through a tough moment, and that's okay. Would you like to talk about what's on your mind?\", \"user\": \"[LANGUAGE: EN] i'am sad\", \"emotions\": [{\"label\": \"sadness\", \"score\": 0.9127}], \"severity\": \"low\", \"timestamp\": \"2026-05-27T15:11:38.508575\"}, {\"timestamp\": \"2026-05-27T15:12:09.707910\", \"user\": \"[LANGUAGE: EN] fuck bitch\", \"ai\": \"It's clear that you're really angry right now. That kind of language can be a hint that you're feeling frustrated and upset. What's going on that's making you feel this way?\", \"emotions\": [{\"label\": \"anger\", \"score\": 0.8069}], \"severity\": \"low\"}], \"summary\": \"\", \"emotion_stats\": {\"sadness\": 1, \"anger\": 1}, \"session_count\": 2}}"],"endpoint":"/api_chat","fn_index":32}
+2026-05-27T21:12:10: [0mPOST /api/ai/chat [32m200[0m 5433.813 ms - 368[0m
+2026-05-27T21:12:39: [AI Service] Calling Gradio with memory: {"history":[{"ai":"It's totally normal to feel sad sometimes. It sounds like you're going through a tough moment, and that's okay. Would you like to talk about what's on your mind?","user":"[LANGUAGE: EN] i'am sad","emotions":[{"label":"sadness","score":0.9127}],"severity":"low","timestamp":"2026-05-27T15:11:38.508575"},{"ai":"It's clear that you're really angry right now. That kind of language can be a hint that you're feeling frustrated and upset. What's going on that's making you feel this way?","user":"[LANGUAGE: EN] fuck bitch","emotions":[{"label":"anger","score":0.8069}],"severity":"low","timestamp":"2026-05-27T15:12:09.707910"}],"summary":"","emotion_stats":{"anger":1,"sadness":1},"session_count":2}
+2026-05-27T21:12:42: [AI Service] Gradio response: {"type":"data","time":"2026-05-27T13:12:42.099Z","data":["{\"counselor_reply\": \"Haha, sepertinya kamu sedang berada dalam suasana yang berbeda-beda dalam waktu singkat! Aku bisa lihat bahwa kamu merasakan emosi yang kuat dan perubahan emosi bisa menimbulkan kebingungan. Apa yang kamu rasakan saat kamu merasa happy dan apa yang memicu perubahan emosi kamu?\", \"analytics\": {\"emotions\": [{\"label\": \"anxiety\", \"score\": 0.6731}, {\"label\": \"joy\", \"score\": 0.4684}], \"keywords\": [{\"keyword\": \"id happy\", \"score\": 0.7273}, {\"keyword\": \"language id\", \"score\": 0.6676}], \"severity\": \"medium\", \"severity_score\": 3}, \"updated_memory\": {\"history\": [{\"ai\": \"It's totally normal to feel sad sometimes. It sounds like you're going through a tough moment, and that's okay. Would you like to talk about what's on your mind?\", \"user\": \"[LANGUAGE: EN] i'am sad\", \"emotions\": [{\"label\": \"sadness\", \"score\": 0.9127}], \"severity\": \"low\", \"timestamp\": \"2026-05-27T15:11:38.508575\"}, {\"ai\": \"It's clear that you're really angry right now. That kind of language can be a hint that you're feeling frustrated and upset. What's going on that's making you feel this way?\", \"user\": \"[LANGUAGE: EN] fuck bitch\", \"emotions\": [{\"label\": \"anger\", \"score\": 0.8069}], \"severity\": \"low\", \"timestamp\": \"2026-05-27T15:12:09.707910\"}, {\"timestamp\": \"2026-05-27T15:12:41.964756\", \"user\": \"[LANGUAGE: ID] aku happy trus harus gimana ya\", \"ai\": \"Haha, sepertinya kamu sedang berada dalam suasana yang berbeda-beda dalam waktu singkat! Aku bisa lihat bahwa kamu merasakan emosi yang kuat dan perubahan emosi bisa menimbulkan kebingungan. Apa yang kamu rasakan saat kamu merasa happy dan apa yang memicu perubahan emosi kamu?\", \"emotions\": [{\"label\": \"anxiety\", \"score\": 0.6731}, {\"label\": \"joy\", \"score\": 0.4684}], \"severity\": \"medium\"}], \"summary\": \"\", \"emotion_stats\": {\"anger\": 1, \"sadness\": 1, \"anxiety\": 1, \"joy\": 1}, \"session_count\": 3}}"],"endpoint":"/api_chat","fn_index":32}
+2026-05-27T21:12:42: [0mPOST /api/ai/chat [32m200[0m 5902.171 ms - 537[0m
+2026-05-27T21:12:49: [0mGET /api/insights/daily [32m200[0m 313.474 ms - 652[0m
+2026-05-27T21:13:03: [0mGET /api/insights/daily [32m200[0m 289.751 ms - 653[0m
+2026-05-27T21:13:09: [0mGET /api/insights/daily [36m304[0m 283.321 ms - -[0m
+2026-05-27T21:13:12: [0mGET /api/insights/daily [36m304[0m 221.462 ms - -[0m
+2026-05-27T21:13:13: [0mGET /api/insights/daily [36m304[0m 223.573 ms - -[0m
+2026-05-27T21:13:16: [0mGET /api/insights/daily [36m304[0m 221.275 ms - -[0m
+2026-05-27T21:13:25: [0mGET /api [33m404[0m 0.472 ms - 142[0m
+2026-05-27T21:13:28: [0mGET /api/insights/daily [36m304[0m 461.435 ms - -[0m
+2026-05-27T21:13:31: [0mGET /api/insights/daily [36m304[0m 222.747 ms - -[0m
+2026-05-27T21:13:38: [0mGET /api/insights/daily [36m304[0m 317.052 ms - -[0m
+2026-05-27T21:13:40: [0mGET /api/insights/daily [36m304[0m 249.159 ms - -[0m
+2026-05-27T21:13:46: [0mGET /api/insights/daily [36m304[0m 294.046 ms - -[0m
+2026-05-27T21:13:50: [0mGET /api/insights/daily [36m304[0m 219.460 ms - -[0m
+2026-05-27T21:14:11: [0mGET /api/journals?limit=10&offset=0 [32m200[0m 328.966 ms - 123[0m
+2026-05-27T21:14:36: [0mPOST /api/journals [32m201[0m 398.738 ms - 351[0m
+2026-05-27T21:14:38: [0mGET /api/journals?limit=10&offset=0 [32m200[0m 244.305 ms - 415[0m
+2026-05-27T21:14:46: [0mGET /api/insights/daily [36m304[0m 423.030 ms - -[0m
+2026-05-27T21:14:59: [0mGET /api/insights/daily [32m200[0m 303.642 ms - 644[0m
+2026-05-27T21:15:21: [0mGET /api/journals?limit=10&offset=0 [36m304[0m 791.387 ms - -[0m
+2026-05-27T21:15:35: [0mGET /api/insights/daily [36m304[0m 300.210 ms - -[0m
+2026-05-27T21:46:58: [0mGET /api/auth/google [32m200[0m 14.289 ms - 248[0m
+2026-05-27T21:48:02: [0mGET /api/insights/daily [32m200[0m 938.077 ms - 660[0m
+2026-05-27T21:51:55: ◇ injected env (5) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-05-27T21:51:55: Server is running on port 5000
+2026-05-27T21:52:20: [0mGET /health [33m404[0m 2.990 ms - 145[0m
+2026-05-27T21:52:26: [0mGET /api/auth/google [32m200[0m 15.286 ms - 248[0m
+2026-05-27T21:53:28: [0mGET /api/insights/daily [36m304[0m 587.411 ms - -[0m
+2026-05-27T21:53:31: [0mGET /api/insights/daily [36m304[0m 205.463 ms - -[0m
+2026-05-27T21:53:34: [0mGET /api/insights/daily [36m304[0m 230.786 ms - -[0m
+2026-05-27T22:01:57: [0mGET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php [33m404[0m 1.050 ms - 193[0m
+2026-05-27T22:03:06: [0mGET /api/health [33m404[0m 0.605 ms - 149[0m
+2026-05-27T22:03:20: [0mHEAD /api/auth/google [32m200[0m 18.025 ms - 248[0m
+2026-05-27T22:03:25: [0mGET /api/auth/google [32m200[0m 2.114 ms - 248[0m
+2026-05-27T22:04:34: [0mGET /api/insights/daily [36m304[0m 528.306 ms - -[0m
+2026-05-27T22:24:12: [0mGET /api/insights/daily [36m304[0m 662.320 ms - -[0m
+2026-05-27T22:33:08: [0mGET /api/health [33m404[0m 2.371 ms - 149[0m
+2026-05-27T22:33:08: [0mGET /api/monitoring/health [33m404[0m 0.461 ms - 160[0m
+2026-05-27T22:33:08: [0mGET /api/providers/client [33m404[0m 0.395 ms - 159[0m
+2026-05-27T22:41:24: [0mGET /api/insights/daily [36m304[0m 572.414 ms - -[0m
+2026-05-27T22:41:42: [0mGET /api/insights/daily [36m304[0m 448.931 ms - -[0m
+2026-05-27T22:41:46: [0mGET /api/ai/memory [32m200[0m 247.073 ms - 3214[0m
+2026-05-28T00:34:59: [0mGET /api/auth/google [32m200[0m 14.743 ms - 248[0m
+2026-05-28T00:42:50: [0mGET /api/health [33m404[0m 0.482 ms - 149[0m
+2026-05-28T00:44:05: [0mGET /api/auth/google [32m200[0m 0.873 ms - 248[0m
+2026-05-28T00:44:14: [0mGET /api/auth/google [32m200[0m 0.705 ms - 248[0m
+2026-05-28T00:44:39: [0mGET /api/auth/google [32m200[0m 0.656 ms - 248[0m
+2026-05-28T01:50:57: [0mGET /api/health [33m404[0m 0.291 ms - 149[0m
+2026-05-28T03:05:04: [0mGET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php [33m404[0m 0.526 ms - 193[0m
+2026-05-28T05:07:57: [0mGET /api/health [33m404[0m 0.314 ms - 149[0m
+2026-05-28T05:08:00: [0mGET /api/monitoring/health [33m404[0m 0.331 ms - 160[0m
+2026-05-28T05:08:01: [0mGET /api/providers/client [33m404[0m 0.282 ms - 159[0m
+2026-05-28T06:37:57: ◇ injected env (5) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-05-28T06:37:57: Server is running on port 5000
+2026-05-28T06:38:24: [0mHEAD /api/auth/google [36m302[0m 5.526 ms - 245[0m
+2026-05-28T06:42:43: [0mGET /api/auth/google [36m302[0m 1.699 ms - 264[0m
+2026-05-28T06:42:48: [0mGET /api/auth/google [36m302[0m 0.935 ms - 264[0m
+2026-05-28T06:46:00: [0mHEAD /api/auth/callback?code=test123 [36m302[0m 526.663 ms - 61[0m
+2026-05-28T06:47:07: [0mGET /api/auth/google [36m302[0m 0.804 ms - 245[0m
+2026-05-28T06:51:40: [0mGET /api/auth/google [36m302[0m 0.756 ms - 264[0m
+2026-05-28T06:51:45: [0mGET /api/auth/callback?code=5f51fb06-b74d-49d0-9899-51e2ccac705a [36m302[0m 368.704 ms - 1539[0m
+2026-05-28T06:51:51: [0mGET /api/insights/daily [32m200[0m 463.955 ms - 67[0m
+2026-05-28T06:51:55: [0mGET /api/insights/daily [36m304[0m 225.415 ms - -[0m
+2026-05-28T06:51:58: [0mGET /api/insights/daily [36m304[0m 223.599 ms - -[0m
+2026-05-28T06:52:02: [0mGET /api/insights/daily [36m304[0m 232.256 ms - -[0m
+2026-05-28T06:52:03: [0mGET /api/ai/memory [32m200[0m 221.746 ms - 70[0m
+2026-05-28T06:52:14: [AI Service] Calling Gradio with memory: []
+2026-05-28T06:52:18: [AI Service] Gradio response: {"type":"data","time":"2026-05-27T22:52:18.717Z","data":["{\"counselor_reply\": \"Hai! Bagaimana kamu hari ini? Apa yang ingin kamu bicarakan?\", \"analytics\": {\"emotions\": [{\"label\": \"neutral\", \"score\": 0.7543}], \"keywords\": [{\"keyword\": \"[LANGUAGE: ID] hai\", \"score\": 1.0}], \"severity\": \"low\", \"severity_score\": 1}, \"updated_memory\": {\"summary\": \"\", \"history\": [{\"timestamp\": \"2026-05-28T00:52:18.588155\", \"user\": \"[LANGUAGE: ID] hai\", \"ai\": \"Hai! Bagaimana kamu hari ini? Apa yang ingin kamu bicarakan?\", \"emotions\": [{\"label\": \"neutral\", \"score\": 0.7543}], \"severity\": \"low\"}], \"emotion_stats\": {\"neutral\": 1}, \"session_count\": 1}}"],"endpoint":"/api_chat","fn_index":32}
+2026-05-28T06:52:19: [0mPOST /api/ai/chat [32m200[0m 7857.349 ms - 250[0m
+2026-05-28T06:52:24: [0mGET /api/journals?limit=10&offset=0 [32m200[0m 499.292 ms - 123[0m
+2026-05-28T07:05:10: [0mGET /api/insights/daily [32m200[0m 536.492 ms - 572[0m
+2026-05-28T07:13:33: [0mGET /api/auth/google [36m302[0m 0.764 ms - 264[0m
+2026-05-28T07:13:39: [0mGET /api/auth/callback?code=862bf690-c71d-4226-8a8c-c965d7be8457 [36m302[0m 1043.196 ms - 1661[0m
+2026-05-28T07:13:46: [0mGET /api/insights/daily [36m304[0m 432.043 ms - -[0m
+2026-05-28T07:13:51: [0mGET /api/insights/daily [36m304[0m 424.700 ms - -[0m
+2026-05-28T07:13:53: [0mGET /api/insights/daily [36m304[0m 223.345 ms - -[0m
+2026-05-28T07:14:29: [0mGET /api/insights/daily [36m304[0m 460.263 ms - -[0m
+2026-05-28T07:14:30: [0mGET /api/ai/memory [32m200[0m 212.560 ms - 3214[0m
+2026-05-28T07:22:43: [0mGET /api/health [33m404[0m 0.923 ms - 149[0m
+2026-05-28T07:22:49: [0mGET /api/auth/google [36m302[0m 3.506 ms - 245[0m
+2026-05-28T07:25:50: [0mGET /api/auth/google [36m302[0m 0.738 ms - 264[0m
+2026-05-28T07:25:56: [0mGET /api/auth/callback?code=c689b618-a3f8-4163-b4ad-e932895ab5f9 [36m302[0m 365.336 ms - 1661[0m
+2026-05-28T07:26:03: [0mGET /api/insights/daily [32m200[0m 463.694 ms - 660[0m
+2026-05-28T07:26:14: [0mGET /api/insights/daily [36m304[0m 438.099 ms - -[0m
+2026-05-28T07:26:24: [0mGET /api/insights/daily [36m304[0m 452.626 ms - -[0m
+2026-05-28T07:34:34: [0mGET /api/insights/daily [36m304[0m 514.278 ms - -[0m
+2026-05-28T07:34:44: [0mGET /api/insights/daily [36m304[0m 358.758 ms - -[0m
+2026-05-28T07:36:24: [0mGET /api/insights/daily [36m304[0m 267.586 ms - -[0m
+2026-05-28T07:37:06: [0mGET /api/insights/daily [36m304[0m 252.711 ms - -[0m
+2026-05-28T07:42:58: [0mGET /api/auth/google [36m302[0m 1.425 ms - 264[0m
+2026-05-28T07:43:01: [0mGET /api/auth/callback?code=74ca959f-620b-4936-b663-3a70605365ab [36m302[0m 217.135 ms - 1661[0m
+2026-05-28T07:43:08: [0mGET /api/insights/daily [32m200[0m 742.163 ms - 660[0m
+2026-05-28T07:43:16: [0mGET /api/insights/daily [36m304[0m 435.949 ms - -[0m
+2026-05-28T07:49:07: [0mGET /api/auth/google [36m302[0m 0.808 ms - 264[0m
+2026-05-28T07:49:09: [0mGET /api/auth/callback?code=24a5f078-d567-412a-b139-23f831fecb8d [36m302[0m 209.294 ms - 1661[0m
+2026-05-28T07:49:16: [0mGET /api/insights/daily [32m200[0m 420.343 ms - 660[0m
+2026-05-28T07:58:54: [0mGET /api/insights/daily [36m304[0m 369.424 ms - -[0m
+2026-05-28T08:00:12: [0mGET /api/insights/daily [32m200[0m 485.946 ms - 67[0m
+2026-05-28T08:00:45: [0mGET /api/insights/daily [36m304[0m 526.674 ms - -[0m
+2026-05-28T08:04:03: [0mGET /api/auth/google [36m302[0m 56.806 ms - 264[0m
+2026-05-28T08:04:06: [0mGET /api/auth/callback?code=18a63d6d-e678-4a97-967d-c42914f19ad1 [36m302[0m 463.518 ms - 1661[0m
+2026-05-28T08:04:11: [0mGET /api/insights/daily [36m304[0m 260.153 ms - -[0m
+2026-05-28T08:04:18: [0mGET /api/insights/daily [36m304[0m 264.122 ms - -[0m
+2026-05-28T08:11:52: [0mGET /api/auth/google [36m302[0m 0.671 ms - 264[0m
+2026-05-28T08:11:57: [0mGET /api/auth/callback?code=82a0c716-df11-46d1-9ab6-703711ba01e2 [36m302[0m 387.315 ms - 1539[0m
+2026-05-28T08:12:04: [0mGET /api/insights/daily [32m200[0m 455.001 ms - 67[0m
+2026-05-28T08:12:12: [0mGET /api/insights/daily [36m304[0m 249.792 ms - -[0m
+2026-05-28T08:29:23: [0mGET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php [33m404[0m 0.604 ms - 193[0m
+2026-05-28T10:29:40: [0mGET /api/insights/daily [32m200[0m 1077.586 ms - 67[0m
+2026-05-28T10:29:45: [0mGET /api/insights/daily [36m304[0m 584.213 ms - -[0m
+2026-05-28T10:29:47: [0mGET /api/insights/daily [36m304[0m 217.971 ms - -[0m
+2026-05-28T10:29:49: [0mGET /api/insights/daily [36m304[0m 218.344 ms - -[0m
+2026-05-28T10:29:51: [0mGET /api/insights/daily [36m304[0m 221.090 ms - -[0m
+2026-05-28T10:29:53: [0mGET /api/insights/daily [36m304[0m 219.413 ms - -[0m
+2026-05-28T10:29:54: [0mGET /api/insights/daily [36m304[0m 215.697 ms - -[0m
+2026-05-28T10:30:01: [0mGET /api/insights/daily [36m304[0m 262.645 ms - -[0m
+2026-05-28T10:30:02: [0mGET /api/ai/memory [32m200[0m 224.524 ms - 3214[0m
+2026-05-28T10:30:04: [0mGET /api/insights/daily [36m304[0m 221.851 ms - -[0m
+2026-05-28T10:30:27: [0mGET /api/insights/daily [36m304[0m 729.221 ms - -[0m
+2026-05-28T10:30:27: [0mGET /api/insights/daily [36m304[0m 233.125 ms - -[0m
+2026-05-28T10:30:29: [0mGET /api/ai/memory [36m304[0m 230.892 ms - -[0m
+2026-05-28T10:30:33: [0mGET /api/insights/daily [36m304[0m 232.537 ms - -[0m
+2026-05-28T10:30:34: [0mGET /api/insights/daily [36m304[0m 212.806 ms - -[0m
+2026-05-28T11:44:05: [0mGET /api/health [33m404[0m 0.406 ms - 149[0m
+2026-05-28T11:44:05: [0mGET /api/monitoring/health [33m404[0m 0.275 ms - 160[0m
+2026-05-28T11:44:06: [0mGET /api/providers/client [33m404[0m 0.302 ms - 159[0m
+2026-05-28T12:05:40: [0mGET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php [33m404[0m 0.488 ms - 193[0m

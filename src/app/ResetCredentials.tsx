@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Eye, EyeOff, Key } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { authService } from "../services/auth";
+import apiClient from "../services/api";
 import { useNotifications } from "./notifications";
 import { useTranslation } from "../translations";
 

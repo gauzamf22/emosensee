@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, ArrowRight, BellOff, Check, Trash2 } from "lucide-react";
 import { useNotifications, formatRelative } from "./notifications";
-import { supabase } from "@/lib/supabase";
+import apiClient from "@/services/api";
 import { getDailyInsight, DailyInsight } from "@/services/insightService";
 import { useTranslation } from "../translations";
 import imgJournaling from "@/imports/Support/4cb91f48acd6e9f10f46f5b752c07482e23858b5.png";
@@ -54,7 +54,7 @@ export default function Home({
   };
 
   // Generate dynamic greeting
-  const username = session?.user?.user_metadata?.username;
+  const username = session?.user?.username;
   const greetingText = username 
     ? `${t.home.hi}, ${username}!` 
     : `${getTimeBasedGreeting()}!`;
@@ -71,20 +71,14 @@ export default function Home({
       try {
         const dateLogged = new Date().toISOString().split('T')[0];
         
-        const { data, error } = await supabase
-          .from('mood_entries')
-          .select('mood')
-          .eq('user_id', session.user.id)
-          .eq('date_logged', dateLogged)
-          .single();
+        const response = await apiClient.get('/api/moods', {
+          params: { date: dateLogged, limit: 1 }
+        });
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching today mood:', error);
-        }
-
-        if (data) {
-          setTodayMood(data.mood);
-          setSelected(data.mood);
+        if (response.data && response.data.length > 0) {
+          const moodData = response.data[0];
+          setTodayMood(moodData.mood);
+          setSelected(moodData.mood);
         }
       } catch (error) {
         console.error('Error fetching today mood:', error);
@@ -132,20 +126,10 @@ export default function Home({
     try {
       const dateLogged = new Date().toISOString().split('T')[0];
       
-      const { error } = await supabase
-        .from('mood_entries')
-        .upsert(
-          {
-            user_id: session.user.id,
-            mood: key,
-            date_logged: dateLogged,
-          },
-          {
-            onConflict: 'user_id,date_logged',
-          }
-        );
-
-      if (error) throw error;
+      await apiClient.post('/api/moods', {
+        mood: key,
+        date_logged: dateLogged,
+      });
 
       setTodayMood(key);
       

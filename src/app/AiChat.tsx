@@ -53,18 +53,18 @@ export default function AiChat({ session }: { session?: any }) {
       try {
         const memory = await getMemory();
         
-        if (memory.conversation_history?.history && memory.conversation_history.history.length > 0) {
-          // Transform Gradio's memory format to frontend Msg[]
-          const loadedMessages: Msg[] = memory.conversation_history.history.flatMap((conv, idx) => [
+        if (memory.conversation_history && memory.conversation_history.length > 0) {
+          // Transform backend memory format to frontend Msg[]
+          const loadedMessages: Msg[] = memory.conversation_history.flatMap((conv, idx) => [
             {
               id: idx * 2,
               from: "user" as const,
-              text: conv.user
+              text: conv.user_message
             },
             {
               id: idx * 2 + 1,
               from: "bot" as const,
-              text: conv.ai
+              text: conv.counselor_reply
             }
           ]);
           

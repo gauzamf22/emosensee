@@ -25,7 +25,8 @@ import Splash from "./Splash";
 import Logo from "./Logo";
 import { motion } from "motion/react";
 import { NotificationProvider, useNotifications } from "./notifications";
-import { supabase } from "../lib/supabase";
+import { authService } from "../services/auth";
+import apiClient from "../services/api";
 import * as insightService from "../services/insightService";
 import { useTranslation } from "../translations";
 
@@ -315,7 +316,7 @@ function AppInner() {
   const [trends, setTrends] = useState<MoodTrend[]>([]);
   const [session, setSession] = useState<any>(null);
 
-  // Fetch mood data from Supabase
+  // Fetch mood data from backend API
   const fetchMoodData = async (userId: string) => {
     try {
       // Get last 7 days
@@ -326,18 +327,17 @@ function AppInner() {
       const startDate = sevenDaysAgo.toISOString().split('T')[0];
       const endDate = today.toISOString().split('T')[0];
 
-      const { data, error } = await supabase
-        .from('mood_entries')
-        .select('mood, date_logged')
-        .eq('user_id', userId)
-        .gte('date_logged', startDate)
-        .lte('date_logged', endDate)
-        .order('date_logged', { ascending: true });
+      const response = await apiClient.get('/api/moods', {
+        params: {
+          start_date: startDate,
+          end_date: endDate,
+        }
+      });
 
-      if (error) throw error;
+      const data = response.data;
 
       // Build 7-day array
-      const moodMap = new Map(data?.map(entry => [entry.date_logged, entry.mood]) || []);
+      const moodMap = new Map(data?.map((entry: any) => [entry.date_logged, entry.mood]) || []);
       const daysArray: DayMood[] = [];
       const todayStr = today.toISOString().split('T')[0];
 
@@ -423,13 +423,15 @@ function AppInner() {
 
   // Check for existing session on mount
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSession(session);
+    const checkAuth = async () => {
+      const user = await authService.getCurrentUser();
+      if (user) {
+        setSession({ user });
         setAuthed(true);
-        fetchMoodData(session.user.id);
+        fetchMoodData(user.id);
       }
-    });
+    };
+    checkAuth();
   }, []);
 
   if (!splashDone) {
