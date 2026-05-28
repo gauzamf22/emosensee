@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { authService } from "../services/auth";
 import { useTranslation } from "../translations";
@@ -128,25 +128,34 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const oauthProcessedRef = useRef(false);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isSignup = mode === "signup";
 
-  // Handle OAuth callback
+  // Handle OAuth callback - prevent infinite loop with useRef
   useEffect(() => {
     const handleOAuthCallback = async () => {
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
       
-      if (code) {
+      // Prevent processing same callback multiple times
+      if (code && !oauthProcessedRef.current) {
+        oauthProcessedRef.current = true;
         setLoading(true);
+        console.log('[Auth] Processing OAuth callback with code:', code.substring(0, 10) + '...');
+        
         try {
           await authService.handleGoogleCallback(code);
+          console.log('[Auth] OAuth callback successful');
           // Clear URL params
           window.history.replaceState({}, document.title, window.location.pathname);
           onAuthed();
         } catch (err: any) {
+          console.error('[Auth] OAuth callback failed:', err);
           setError(err.response?.data?.message || err.message || "OAuth callback failed");
           setLoading(false);
+          oauthProcessedRef.current = false; // Allow retry
         }
       }
     };
@@ -154,25 +163,105 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
     handleOAuthCallback();
   }, [onAuthed]);
 
+  // Loading timeout protection - auto-reset after 30s
+  useEffect(() => {
+    if (loading) {
+      console.log('[Auth] Loading started, setting 30s timeout');
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.warn('[Auth] Loading timeout reached, resetting state');
+        setLoading(false);
+        setError("Request timeout. Please try again.");
+      }, 30000);
+    } else {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [loading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    // Form validation
+    console.log('[Auth] Form submit:', { mode, email, username: isSignup ? username : 'N/A' });
+    
+    if (!email.trim()) {
+      setError("Email is required");
+      return;
+    }
+    
+    if (!email.includes('@')) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    
+    if (isSignup) {
+      if (!username.trim()) {
+        setError("Username is required");
+        return;
+      }
+      
+      if (username.length < 3) {
+        setError("Username must be at least 3 characters");
+        return;
+      }
+    }
+    
     setLoading(true);
+    console.log('[Auth] Starting API call:', isSignup ? 'register' : 'login');
 
     try {
       if (isSignup) {
-        // Register new user (auto-login after registration)
+        console.log('[Auth] Registering user...');
         await authService.register(email, password, username);
+        console.log('[Auth] Registration successful');
         onAuthed();
       } else {
-        // Login existing user (identifier can be email or username)
+        console.log('[Auth] Logging in user...');
         await authService.login(email, password);
+        console.log('[Auth] Login successful');
         onAuthed();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "An error occurred");
+      console.error('[Auth] API error:', err);
+      
+      // Better error messages
+      let errorMessage = "An error occurred";
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        if (err.message.includes('Network Error')) {
+          errorMessage = "Network error. Please check your connection.";
+        } else if (err.message.includes('timeout')) {
+          errorMessage = "Request timeout. Please try again.";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
+      console.log('[Auth] API call completed');
     }
   };
 
@@ -180,11 +269,29 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
     try {
       setError("");
       setLoading(true);
+      console.log('[Auth] Initiating Google OAuth...');
+      
       const oauthUrl = await authService.getGoogleOAuthUrl();
+      console.log('[Auth] Got OAuth URL, redirecting...');
+      
       // Redirect to Google OAuth
       window.location.href = oauthUrl;
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Google login failed");
+      console.error('[Auth] Google OAuth error:', err);
+      
+      let errorMessage = "Google login failed";
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        if (err.message.includes('Network Error')) {
+          errorMessage = "Network error. Please check your connection.";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
       setLoading(false);
     }
   };

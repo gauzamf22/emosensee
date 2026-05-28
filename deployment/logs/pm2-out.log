@@ -153,3 +153,9 @@
 2026-05-28T11:44:05: [0mGET /api/monitoring/health [33m404[0m 0.275 ms - 160[0m
 2026-05-28T11:44:06: [0mGET /api/providers/client [33m404[0m 0.302 ms - 159[0m
 2026-05-28T12:05:40: [0mGET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php [33m404[0m 0.488 ms - 193[0m
+2026-05-28T15:02:45: [0mGET /api/health [33m404[0m 50.772 ms - 149[0m
+2026-05-28T15:02:45: [0mGET /api/monitoring/health [33m404[0m 0.398 ms - 160[0m
+2026-05-28T16:10:12: [0mGET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php [33m404[0m 16.365 ms - 193[0m
+2026-05-28T16:35:31: [0mGET /api/health [33m404[0m 52.585 ms - 149[0m
+2026-05-28T16:35:32: [0mGET /api/monitoring/health [33m404[0m 0.807 ms - 160[0m
+2026-05-28T16:35:34: [0mGET /api/providers/client [33m404[0m 0.838 ms - 159[0m

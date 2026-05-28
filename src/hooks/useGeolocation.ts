@@ -1,59 +1,61 @@
 import { useState, useEffect } from 'react';
 
-export interface Coordinates {
-  lat: number;
-  lng: number;
-}
-
-export interface GeolocationState {
-  coordinates: Coordinates | null;
+interface GeolocationState {
+  latitude: number | null;
+  longitude: number | null;
   error: string | null;
   loading: boolean;
-  requestLocation: () => void;
 }
 
-export function useGeolocation(): GeolocationState {
-  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+export function useGeolocation() {
+  const [state, setState] = useState<GeolocationState>({
+    latitude: null,
+    longitude: null,
+    error: null,
+    loading: true,
+  });
 
-  const requestLocation = () => {
-    setLoading(true);
-    setError(null);
-
+  useEffect(() => {
     if (!navigator.geolocation) {
-      setError('Browser Anda tidak mendukung geolocation');
-      setLoading(false);
+      setState({
+        latitude: null,
+        longitude: null,
+        error: 'Geolocation is not supported by your browser',
+        loading: false,
+      });
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCoordinates({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
+        setState({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          error: null,
+          loading: false,
         });
-        setError(null);
-        setLoading(false);
       },
-      (err) => {
-        let errorMessage = 'Gagal mendapatkan lokasi';
-
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            errorMessage = 'Kamu harus mengaktifkan akses lokasi terlebih dahulu';
+      (error) => {
+        let errorMessage = 'Unable to retrieve your location';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied';
             break;
-          case err.POSITION_UNAVAILABLE:
-            errorMessage = 'Informasi lokasi tidak tersedia';
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable';
             break;
-          case err.TIMEOUT:
-            errorMessage = 'Permintaan lokasi timeout';
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out';
             break;
         }
 
-        setError(errorMessage);
-        setCoordinates(null);
-        setLoading(false);
+        setState({
+          latitude: null,
+          longitude: null,
+          error: errorMessage,
+          loading: false,
+        });
       },
       {
         enableHighAccuracy: true,
@@ -61,16 +63,7 @@ export function useGeolocation(): GeolocationState {
         maximumAge: 0,
       }
     );
-  };
-
-  useEffect(() => {
-    requestLocation();
   }, []);
 
-  return {
-    coordinates,
-    error,
-    loading,
-    requestLocation,
-  };
+  return state;
 }

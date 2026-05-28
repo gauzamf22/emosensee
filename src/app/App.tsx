@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ArrowLeft,
   ChevronDown,
@@ -307,14 +307,58 @@ export default function App() {
 }
 
 function AppInner() {
-  const [splashDone, setSplashDone] = useState(false);
-  const [onboarded, setOnboarded] = useState(false);
-  const [authed, setAuthed] = useState(false);
+  const [splashDone, setSplashDone] = useState(() => {
+    const value = localStorage.getItem('splash_done') === 'true';
+    console.log('[App] Initial splashDone:', value);
+    return value;
+  });
+  const [onboarded, setOnboarded] = useState(() => {
+    const value = localStorage.getItem('onboarded') === 'true';
+    console.log('[App] Initial onboarded:', value);
+    return value;
+  });
+  const [authed, setAuthed] = useState(() => {
+    const value = authService.isAuthenticated();
+    console.log('[App] Initial authed:', value);
+    return value;
+  });
   const [active, setActive] = useState<NavKey>("home");
   const [sub, setSub] = useState<SubPage>(null);
   const [days, setDays] = useState<DayMood[]>([]);
   const [trends, setTrends] = useState<MoodTrend[]>([]);
   const [session, setSession] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Stable callbacks to prevent infinite re-renders
+  const handleSplashDone = useCallback(() => {
+    console.log('[App] handleSplashDone called');
+    localStorage.setItem('splash_done', 'true');
+    setSplashDone(true);
+  }, []);
+
+  const handleOnboardingDone = useCallback(() => {
+    console.log('[App] handleOnboardingDone called');
+    localStorage.setItem('onboarded', 'true');
+    setOnboarded(true);
+  }, []);
+
+  const handleAuthed = useCallback(async () => {
+    console.log('[App] handleAuthed called');
+    
+    // Get user from localStorage (already saved by authService.login/register)
+    const user = await authService.getCurrentUser();
+    
+    if (user) {
+      console.log('[App] Setting session for user:', user.username);
+      setSession({ user });
+      setAuthed(true);
+      
+      // Fetch mood data for the user
+      fetchMoodData(user.id);
+    } else {
+      console.error('[App] handleAuthed called but no user found in localStorage');
+    }
+  }, []);
 
   // Fetch mood data from backend API
   const fetchMoodData = async (userId: string) => {
@@ -329,8 +373,8 @@ function AppInner() {
 
       const response = await apiClient.get('/api/moods', {
         params: {
-          start_date: startDate,
-          end_date: endDate,
+          startDate: startDate,
+          endDate: endDate,
         }
       });
 
@@ -421,38 +465,64 @@ function AppInner() {
     }
   };
 
-  // Check for existing session on mount
+  // Check for existing session on mount - ONLY after splash and onboarding complete
   useEffect(() => {
+    console.log('[App] Auth check effect triggered. splashDone:', splashDone, 'onboarded:', onboarded, 'authChecked:', authChecked);
+    
+    // Don't check auth until user has completed splash and onboarding
+    if (!splashDone || !onboarded) {
+      console.log('[App] Skipping auth check - splash or onboarding not complete');
+      return;
+    }
+    
+    // Only check once
+    if (authChecked) {
+      console.log('[App] Auth already checked, skipping');
+      return;
+    }
+    
     const checkAuth = async () => {
+      console.log('[App] Running auth check...');
       const user = await authService.getCurrentUser();
       if (user) {
+        console.log('[App] Found existing user session:', user.username);
         setSession({ user });
         setAuthed(true);
         fetchMoodData(user.id);
+      } else {
+        console.log('[App] No existing user session found');
       }
+      setAuthChecked(true);
     };
     checkAuth();
-  }, []);
+  }, [splashDone, onboarded, authChecked]);
+
+  console.log('[App] Current state - splashDone:', splashDone, 'onboarded:', onboarded, 'authed:', authed);
 
   if (!splashDone) {
-    return <Splash onDone={() => setSplashDone(true)} />;
+    console.log('[App] Rendering Splash');
+    return <Splash onDone={handleSplashDone} />;
   }
 
   if (!onboarded) {
+    console.log('[App] Rendering Onboarding');
     return (
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       >
-        <Onboarding onDone={() => setOnboarded(true)} />
+        <Onboarding onDone={handleOnboardingDone} />
       </motion.div>
     );
   }
 
   if (!authed) {
-    return <Auth onAuthed={() => setAuthed(true)} />;
+    console.log('[App] Rendering Auth');
+    return <Auth onAuthed={handleAuthed} />;
   }
+
+  console.log('[App] Rendering Main App');
 
   const selectNav = (k: NavKey) => {
     setActive(k);
@@ -547,22 +617,36 @@ function AppInner() {
               session={session}
             />
           ) : active === "home" ? (
-            <HomePage
-              session={session}
-              onQuickOpen={(k) => {
-                setActive("support");
-                setSub(k);
-              }}
-              onStartChat={() => {
-                setActive("ai");
-                setSub(null);
-              }}
-              onMoodSaved={() => {
-                if (session?.user?.id) {
-                  fetchMoodData(session.user.id);
-                }
-              }}
-            />
+            <ErrorBoundary
+              fallback={
+                <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+                  <p className="text-red-600 font-medium mb-4">Home page error</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                  >
+                    Reload
+                  </button>
+                </div>
+              }
+            >
+              <HomePage
+                session={session}
+                onQuickOpen={(k) => {
+                  setActive("support");
+                  setSub(k);
+                }}
+                onStartChat={() => {
+                  setActive("ai");
+                  setSub(null);
+                }}
+                onMoodSaved={() => {
+                  if (session?.user?.id) {
+                    fetchMoodData(session.user.id);
+                  }
+                }}
+              />
+            </ErrorBoundary>
           ) : active === "ai" ? (
             <AiChat session={session} />
           ) : (

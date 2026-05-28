@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import img1 from "@/imports/2/cd4f8974f29b6e6a09e29aa46c5960d5826cb09a.png";
 import img2 from "@/imports/3/8084e2711203566f7c04035bc716e9423d91e33e.png";
 import Logo from "./Logo";
@@ -34,6 +34,30 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
   const slide = SLIDES[step];
   const isLast = step === SLIDES.length - 1;
 
+  useEffect(() => {
+    console.log('[Onboarding] Component mounted');
+    return () => console.log('[Onboarding] Component unmounting');
+  }, []);
+
+  useEffect(() => {
+    console.log('[Onboarding] Step changed to:', step);
+  }, [step]);
+
+  const handleNext = () => {
+    console.log('[Onboarding] Next button clicked, isLast:', isLast);
+    if (isLast) {
+      console.log('[Onboarding] Calling onDone');
+      onDone();
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  const handleSkip = () => {
+    console.log('[Onboarding] Skip button clicked, calling onDone');
+    onDone();
+  };
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
       <img src={slide.bg} alt="" className="absolute inset-0 size-full object-cover" />
@@ -63,14 +87,14 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
           </div>
 
           <button
-            onClick={() => (isLast ? onDone() : setStep(step + 1))}
+            onClick={handleNext}
             className="w-full max-w-sm h-11 rounded-[10px] bg-white text-[#0063F3] font-['Inter'] font-medium text-lg hover:bg-white/95 transition-colors"
           >
             {isLast ? "Get Started" : "Next"}
           </button>
 
           <button
-            onClick={onDone}
+            onClick={handleSkip}
             className="font-['Inter'] text-sm text-white/80 hover:text-white"
           >
             Skip
