@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "../lib/supabase";
 
 type Language = "en" | "id";
 
@@ -10,18 +9,19 @@ interface LanguageContextType {
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LANGUAGE_KEY = "app_language";
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
   const [loading, setLoading] = useState(true);
 
-  // Load language from Supabase user_metadata on mount
+  // Load language from localStorage on mount
   useEffect(() => {
-    const loadLanguage = async () => {
+    const loadLanguage = () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.user_metadata?.language) {
-          setLanguageState(session.user.user_metadata.language);
+        const savedLang = localStorage.getItem(LANGUAGE_KEY);
+        if (savedLang === "en" || savedLang === "id") {
+          setLanguageState(savedLang);
         }
       } catch (err) {
         console.error("Failed to load language preference:", err);
@@ -33,15 +33,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     loadLanguage();
   }, []);
 
-  // Save language to Supabase user_metadata
+  // Save language to localStorage
   const setLanguage = async (lang: Language) => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { language: lang }
-      });
-
-      if (error) throw error;
-
+      localStorage.setItem(LANGUAGE_KEY, lang);
       setLanguageState(lang);
     } catch (err) {
       console.error("Failed to save language preference:", err);

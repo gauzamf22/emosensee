@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { authService } from "../services/auth";
 import { useTranslation } from "../translations";
 
 type Mode = "login" | "signup";
@@ -131,6 +131,29 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
 
   const isSignup = mode === "signup";
 
+  // Handle OAuth callback
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      
+      if (code) {
+        setLoading(true);
+        try {
+          await authService.handleGoogleCallback(code);
+          // Clear URL params
+          window.history.replaceState({}, document.title, window.location.pathname);
+          onAuthed();
+        } catch (err: any) {
+          setError(err.response?.data?.message || err.message || "OAuth callback failed");
+          setLoading(false);
+        }
+      }
+    };
+    
+    handleOAuthCallback();
+  }, [onAuthed]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -138,38 +161,16 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
 
     try {
       if (isSignup) {
-        // Register new user
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              username,
-            },
-          },
-        });
-
-        if (signUpError) throw signUpError;
-
-        if (data.user) {
-          // Auto-login after signup
-          onAuthed();
-        }
+        // Register new user (auto-login after registration)
+        await authService.register(email, password, username);
+        onAuthed();
       } else {
-        // Login existing user
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (signInError) throw signInError;
-
-        if (data.user) {
-          onAuthed();
-        }
+        // Login existing user (identifier can be email or username)
+        await authService.login(email, password);
+        onAuthed();
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      setError(err.response?.data?.message || err.message || "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -177,16 +178,14 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
 
   const handleGoogleLogin = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        },
-      });
-
-      if (error) throw error;
+      setError("");
+      setLoading(true);
+      const oauthUrl = await authService.getGoogleOAuthUrl();
+      // Redirect to Google OAuth
+      window.location.href = oauthUrl;
     } catch (err: any) {
-      setError(err.message || "Google login failed");
+      setError(err.response?.data?.message || err.message || "Google login failed");
+      setLoading(false);
     }
   };
 

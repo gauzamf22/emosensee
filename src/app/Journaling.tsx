@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { useNotifications } from "./notifications";
-import { createJournal, getJournals, Journal } from "../services/journalService";
+import { createJournal, getJournals, Journal } from "../services/journals";
 import { useTranslation } from "../translations";
 
 const MAX = 500;

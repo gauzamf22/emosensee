@@ -3,7 +3,7 @@ import { useNotifications } from "./notifications";
 import { useTranslation } from "../translations";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { authService } from "../services/auth";
 
 function FieldRow({
   label,
@@ -98,9 +98,9 @@ export default function Settings({
 
   useEffect(() => {
     const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = authService.getSession();
       if (session?.user) {
-        setUsername(session.user.user_metadata?.username || "Not set");
+        setUsername(session.user.username || "Not set");
         setEmail(session.user.email || "Not set");
       }
     };

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Settings as SettingsIcon, ChevronRight, LogOut } from "lucide-react";
 import { useNotifications } from "./notifications";
-import { authService } from "../services/auth";
-import apiClient from "../services/api";
+import { supabase } from "@/lib/supabase";
 import { useTranslation } from "../translations";
 
 type Action = "settings" | "activities" | "home" | "journaling";
@@ -52,6 +51,9 @@ function ActivityItem({
 }) {
   const { t } = useTranslation();
   
+  // Guard against undefined activity
+  if (!activity) return null;
+  
   if (activity.type === "mood") {
     return (
       <button
@@ -62,7 +64,7 @@ function ActivityItem({
           <span className="text-2xl">{activity.mood}</span>
           <div className="flex flex-col items-start">
             <span className="font-['Nunito'] text-sm text-[#1e1e1e]">{t.activities.moodCheckIn}</span>
-            <span className="font-['Nunito'] text-xs text-[#808080]">{formatTime(activity.timestamp)}</span>
+            <span className="font-['Nunito'] text-xs text-[#808080]">{activity.timestamp ? formatTime(activity.timestamp) : ''}</span>
           </div>
         </div>
         <ChevronRight className="size-4 text-[#808080]" />
@@ -76,9 +78,9 @@ function ActivityItem({
       className="w-full bg-white rounded-xl px-4 py-3 flex items-center justify-between border border-[#EFEFF3] hover:bg-[#F8F9FC] transition-colors"
     >
       <div className="flex flex-col items-start flex-1 min-w-0">
-        <span className="font-['Nunito'] font-medium text-sm text-[#1e1e1e] truncate w-full">{activity.title}</span>
-        <span className="font-['Nunito'] text-xs text-[#808080] truncate w-full">{activity.preview}</span>
-        <span className="font-['Nunito'] text-xs text-[#808080] mt-1">{formatTime(activity.timestamp)}</span>
+        <span className="font-['Nunito'] font-medium text-sm text-[#1e1e1e] truncate w-full">{activity.title || 'Untitled'}</span>
+        <span className="font-['Nunito'] text-xs text-[#808080] truncate w-full">{activity.preview || ''}</span>
+        <span className="font-['Nunito'] text-xs text-[#808080] mt-1">{activity.timestamp ? formatTime(activity.timestamp) : ''}</span>
       </div>
       <ChevronRight className="size-4 text-[#808080] ml-2 flex-shrink-0" />
     </button>
@@ -95,7 +97,7 @@ export default function Profile({
   const { push } = useNotifications();
   const { t } = useTranslation();
   
-  const username = session?.user?.username || "User";
+  const username = session?.user?.user_metadata?.username || "User";
   const email = session?.user?.email || "";
   const avatarInitial = username[0]?.toUpperCase() || "U";
   
@@ -129,27 +131,35 @@ export default function Profile({
     try {
       const offset = pageNum * 10;
       
-      // Fetch mood entries from backend
-      const moodsResponse = await apiClient.get('/api/moods', {
-        params: { limit: 10, offset }
-      });
-      const moods = moodsResponse.data;
+      // Fetch mood entries
+      const { data: moods, error: moodError } = await supabase
+        .from("mood_entries")
+        .select("mood, created_at")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + 9);
 
-      // Fetch journal entries from backend
-      const journalsResponse = await apiClient.get('/api/journals', {
-        params: { limit: 10, offset }
-      });
-      const journals = journalsResponse.data;
+      if (moodError) throw moodError;
+
+      // Fetch journal entries
+      const { data: journals, error: journalError } = await supabase
+        .from("journal_entries")
+        .select("id, title, description, created_at")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + 9);
+
+      if (journalError) throw journalError;
 
       // Combine and sort
       const combined: Activity[] = [
-        ...(moods || []).map((m: any) => ({
+        ...(moods || []).map(m => ({
           type: "mood" as const,
           id: `mood-${m.created_at}`,
           timestamp: new Date(m.created_at),
           mood: m.mood,
         })),
-        ...(journals || []).map((j: any) => ({
+        ...(journals || []).map(j => ({
           type: "journal" as const,
           id: j.id,
           timestamp: new Date(j.created_at),
@@ -173,19 +183,28 @@ export default function Profile({
   };
 
   useEffect(() => {
-    fetchActivities(0);
+    if (session?.user?.id) {
+      fetchActivities(0);
+    }
   }, [session?.user?.id]);
 
   const handleLogout = async () => {
     try {
-      await authService.logout();
+      await supabase.auth.signOut();
       push({ source: "profile", title: t.profile.logoutSuccess });
-      window.location.reload(); // Reload to reset auth state
     } catch (error) {
       console.error('Logout error:', error);
       push({ source: "profile", title: t.profile.logoutFailed, body: t.profile.tryAgain });
     }
   };
+
+  if (!session) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <div className="animate-pulse text-gray-400">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8 -mt-2">
@@ -213,7 +232,7 @@ export default function Profile({
           </div>
         )}
 
-        {activities.map((activity) => (
+        {activities.filter(a => a).map((activity) => (
           <ActivityItem
             key={activity.id}
             activity={activity}
