@@ -1,4 +1,4 @@
-import api from './api';
+import api, { handleApiError } from './api';
 
 export interface FacilityLocation {
   lat: number;
@@ -29,10 +29,15 @@ const facilitiesService = {
    * @returns Array of nearby facilities
    */
   async getNearbyFacilities(lat: number, lng: number): Promise<Facility[]> {
-    const response = await api.get<FacilitiesResponse>(
-      `/api/facilities/nearby?lat=${lat}&lng=${lng}`
-    );
-    return response.data.data;
+    try {
+      const response = await api.get<FacilitiesResponse>(
+        '/api/facilities/nearby',
+        { params: { lat, lng } }
+      );
+      return response.data.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   },
 };
 

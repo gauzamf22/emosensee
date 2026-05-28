@@ -342,8 +342,26 @@ function AppInner() {
     setOnboarded(true);
   }, []);
 
+  const handleAuthed = useCallback(async () => {
+    console.log('[App] handleAuthed called');
+    
+    // Get user from localStorage (already saved by authService.login/register)
+    const user = await authService.getCurrentUser();
+    
+    if (user) {
+      console.log('[App] Setting session for user:', user.username);
+      setSession({ user });
+      setAuthed(true);
+      
+      // Fetch mood data for the user
+      fetchMoodData(user.id);
+    } else {
+      console.error('[App] handleAuthed called but no user found in localStorage');
+    }
+  }, []);
+
   // Fetch mood data from backend API
-  const fetchMoodData = useCallback(async (userId: string) => {
+  const fetchMoodData = async (userId: string) => {
     try {
       // Get last 7 days
       const today = new Date();
@@ -360,13 +378,10 @@ function AppInner() {
         }
       });
 
-      // Handle both response formats: [...] or {data: [...]}
-      const apiData = Array.isArray(response.data) 
-        ? response.data 
-        : (response.data?.data || []);
+      const data = response.data;
 
       // Build 7-day array
-      const moodMap = new Map(apiData?.map((entry: any) => [entry.date_logged, entry.mood]) || []);
+      const moodMap = new Map(data?.map((entry: any) => [entry.date_logged, entry.mood]) || []);
       const daysArray: DayMood[] = [];
       const todayStr = today.toISOString().split('T')[0];
 
@@ -395,13 +410,13 @@ function AppInner() {
         happy: 0,
       };
 
-      apiData?.forEach(entry => {
+      data?.forEach(entry => {
         if (entry.mood && moodCounts.hasOwnProperty(entry.mood)) {
           moodCounts[entry.mood]++;
         }
       });
 
-      const total = apiData?.length || 0;
+      const total = data?.length || 0;
       const maxMood = total > 0 
         ? Object.entries(moodCounts).reduce((a, b) => a[1] > b[1] ? a : b)[0]
         : 'anxious';
@@ -448,25 +463,7 @@ function AppInner() {
     } catch (error) {
       console.error('Error fetching mood data:', error);
     }
-  }, []);
-
-  const handleAuthed = useCallback(async () => {
-    console.log('[App] handleAuthed called');
-    
-    // Get user from localStorage (already saved by authService.login/register)
-    const user = await authService.getCurrentUser();
-    
-    if (user) {
-      console.log('[App] Setting session for user:', user.username);
-      setSession({ user });
-      setAuthed(true);
-      
-      // Fetch mood data for the user
-      fetchMoodData(user.id);
-    } else {
-      console.error('[App] handleAuthed called but no user found in localStorage');
-    }
-  }, [fetchMoodData]);
+  };
 
   // Check for existing session on mount - ONLY after splash and onboarding complete
   useEffect(() => {
@@ -620,22 +617,36 @@ function AppInner() {
               session={session}
             />
           ) : active === "home" ? (
-            <HomePage
-              session={session}
-              onQuickOpen={(k) => {
-                setActive("support");
-                setSub(k);
-              }}
-              onStartChat={() => {
-                setActive("ai");
-                setSub(null);
-              }}
-              onMoodSaved={() => {
-                if (session?.user?.id) {
-                  fetchMoodData(session.user.id);
-                }
-              }}
-            />
+            <ErrorBoundary
+              fallback={
+                <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+                  <p className="text-red-600 font-medium mb-4">Home page error</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                  >
+                    Reload
+                  </button>
+                </div>
+              }
+            >
+              <HomePage
+                session={session}
+                onQuickOpen={(k) => {
+                  setActive("support");
+                  setSub(k);
+                }}
+                onStartChat={() => {
+                  setActive("ai");
+                  setSub(null);
+                }}
+                onMoodSaved={() => {
+                  if (session?.user?.id) {
+                    fetchMoodData(session.user.id);
+                  }
+                }}
+              />
+            </ErrorBoundary>
           ) : active === "ai" ? (
             <AiChat session={session} />
           ) : (
