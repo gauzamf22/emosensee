@@ -47,20 +47,23 @@ const getHistory = async (req, res, next) => {
     const userId = req.user.id;
     const token = req.token;
     
-    const { startDate, endDate } = req.query;
+    // Accept both camelCase and snake_case formats
+    const { startDate, endDate, start_date, end_date } = req.query;
+    const start = startDate || start_date;
+    const end = endDate || end_date;
 
-    if (!startDate || !endDate) {
+    if (!start || !end) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Parameter startDate dan endDate wajib diisi (Format: YYYY-MM-DD)' 
+        message: 'Parameter startDate/start_date dan endDate/end_date wajib diisi (Format: YYYY-MM-DD)' 
       });
     }
 
-    const historyData = await moodService.getMoodHistoryByRange(userId, startDate, endDate, token);
+    const historyData = await moodService.getMoodHistoryByRange(userId, start, end, token);
 
     res.status(200).json({
       success: true,
-      message: `Riwayat mood dari tanggal ${startDate} sampai ${endDate}`,
+      message: `Riwayat mood dari tanggal ${start} sampai ${end}`,
       data: historyData
     });
   } catch (error) {

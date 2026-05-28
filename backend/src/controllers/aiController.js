@@ -39,7 +39,10 @@ const chatWithAI = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: aiData.counselorReply
+      data: {
+        reply: aiData.counselorReply,
+        analytics: aiData.analytics
+      }
     });
   } catch (error) {
     next(error);
@@ -142,4 +145,27 @@ console.log("=====================");
   }
 };
 
-module.exports = { chatWithAI, analyzeUserText, generateAIInsight };
+const getMemory = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data: session } = await supabase
+      .from('chat_sessions')
+      .select('memory_data')
+      .eq('user_id', userId)
+      .eq('chat_date', today)
+      .maybeSingle();
+    
+    const memoryData = session?.memory_data || { conversation_history: [], lastUpdated: null };
+    
+    res.status(200).json({
+      success: true,
+      data: memoryData
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { chatWithAI, analyzeUserText, generateAIInsight, getMemory };

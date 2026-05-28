@@ -7,6 +7,7 @@ router.use(requireAuth);
 
 router.post('/chat', aiController.chatWithAI);
 router.post('/analyze', aiController.analyzeUserText);
-router.get('/insight', aiController.generateAIInsight)
+router.get('/insight', aiController.generateAIInsight);
+router.get('/memory', aiController.getMemory);
 
 module.exports = router;
