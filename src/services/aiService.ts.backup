@@ -29,10 +29,7 @@ export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-
       API_ENDPOINTS.AI_CHAT,
       { message, language }
     );
-    
-    // Handle both response formats: {data: {...}} or direct {...}
-    const data = response.data?.data || response.data;
-    return data;
+    return response.data.data;
   } catch (error) {
     throw handleApiError(error);
   }
@@ -41,10 +38,7 @@ export async function sendChatMessage(message: string, language?: 'id-ID' | 'en-
 export async function getMemory(): Promise<MemoryData> {
   try {
     const response = await apiClient.get<ApiResponse<MemoryData>>('/api/ai/memory');
-    
-    // Handle both response formats: {data: {...}} or direct {...}
-    const data = response.data?.data || response.data;
-    return data;
+    return response.data.data;
   } catch (error) {
     throw handleApiError(error);
   }
