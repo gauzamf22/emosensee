@@ -34,9 +34,10 @@ const findEmailByUsername = async (username) => {
 };
 
 const getGoogleOAuthUrl = async () => {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: 'http://localhost:3000/api/auth/callback' } 
+    options: { redirectTo: `${baseUrl}/api/auth/callback` } 
   });
 
   if (error) throw error;
