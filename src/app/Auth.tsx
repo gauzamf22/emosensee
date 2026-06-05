@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { authService } from "../services/auth";
+import { authService, type AuthUser } from "../services/auth";
 import { useTranslation } from "../translations";
 
 type Mode = "login" | "signup";
@@ -136,23 +136,24 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
   // Handle OAuth callback - check for token param from backend redirect
   useEffect(() => {
     const handleOAuthCallback = async () => {
+      if (oauthProcessedRef.current) return;
+
+      // Check 1: Backend redirect with query params: ?token=...&user=...
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token');
       const userStr = params.get('user');
-      
-      // Prevent processing same callback multiple times
-      if (token && userStr && !oauthProcessedRef.current) {
+
+      if (token && userStr) {
         oauthProcessedRef.current = true;
         setLoading(true);
         console.log('[Auth] Processing OAuth callback with token');
-        
+
         try {
           const user = JSON.parse(decodeURIComponent(userStr));
           authService.setToken(token);
           authService.setUser(user);
           console.log('[Auth] OAuth callback successful');
-          
-          // Clear URL params
+
           window.history.replaceState({}, document.title, window.location.pathname);
           onAuthed();
         } catch (error) {
@@ -160,9 +161,48 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
           setError('Google login failed. Please try again.');
           setLoading(false);
         }
+        return;
+      }
+
+      // Check 2: Supabase PKCE redirect with hash fragment: #access_token=...
+      const hash = window.location.hash.replace(/^#/, '');
+      if (!hash) return;
+
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get('access_token');
+
+      if (accessToken) {
+        oauthProcessedRef.current = true;
+        setLoading(true);
+        console.log('[Auth] Processing PKCE callback with access_token');
+
+        try {
+          const base64Url = accessToken.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(atob(base64));
+
+          const user: AuthUser = {
+            id: payload.sub,
+            email: payload.email || '',
+            username: payload.user_metadata?.full_name ||
+                      payload.user_metadata?.name ||
+                      (payload.email ? payload.email.split('@')[0] : 'user'),
+          };
+
+          authService.setToken(accessToken);
+          authService.setUser(user);
+          console.log('[Auth] PKCE callback successful');
+
+          window.history.replaceState({}, document.title, window.location.pathname);
+          onAuthed();
+        } catch (error) {
+          console.error('[Auth] PKCE callback error:', error);
+          setError('Google login failed. Please try again.');
+          setLoading(false);
+        }
       }
     };
-    
+
     handleOAuthCallback();
   }, [onAuthed]);
 
