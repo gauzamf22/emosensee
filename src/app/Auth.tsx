@@ -342,7 +342,7 @@ export default function Auth({ onAuthed }: { onAuthed: () => void }) {
   return (
     <div className="min-h-screen w-full bg-[#F6F7FB] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md bg-white sm:bg-transparent">
-        <div className="sm:bg-white sm:shadow-[0_20px_60px_-20px_rgba(17,24,39,0.15)] sm:rounded-2xl sm:p-8 flex flex-col gap-6">
+        <div className="sm:bg-white sm:shadow-[0_20px_60px_-20px_rgba(17,24,39,0.15)] sm:rounded-2xl p-5 sm:p-8 flex flex-col gap-6">
           <h1 className="font-['Poppins'] font-semibold text-[#333] text-2xl text-center">
             {isSignup ? "Sign Up" : "Login"}
           </h1>
