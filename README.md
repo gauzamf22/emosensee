@@ -1022,13 +1022,4 @@ This project is proprietary software. All rights reserved.
 
 ---
 
-## Support
-
-For issues and questions:
-- Email: support@emosense.com
-- Documentation: https://docs.emosense.com
-- Issue Tracker: GitHub Issues
-
----
-
-**Built with ❤️ for mental health awareness**
+**Built with Elephant Mada University**
