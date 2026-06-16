@@ -24,13 +24,13 @@ https://www.figma.com/design/hKhn7oh4UJxnjFBLgjv37n/EmoSense?node-id=190-2501&t=
 **EmoSense** is a comprehensive mental health companion platform that combines AI-powered counseling, mood tracking, journaling, and community support. The platform provides personalized mental health insights and connects users with nearby mental health facilities.
 
 ### Key Features
-- 🤖 **AI Counselor**: Real-time chat with emotion-aware AI counselor
-- 📊 **Mood Tracking**: Daily mood logging with trend analysis
-- 📝 **Journaling**: Secure personal journaling with AI-powered insights
-- 🗺️ **Facility Finder**: Geolocation-based mental health facility discovery
-- 🚨 **Emergency Support**: Quick access to crisis hotlines
-- 👥 **Community**: Mental health resources and support groups
-- 🌐 **Multilingual**: Support for Indonesian and English
+- **AI Counselor**: Real-time chat with emotion-aware AI counselor
+- **Mood Tracking**: Daily mood logging with trend analysis
+- **Journaling**: Secure personal journaling with AI-powered insights
+- **Facility Finder**: Geolocation-based mental health facility discovery
+- **Emergency Support**: Quick access to crisis hotlines
+- **Community**: Mental health resources and support groups
+- **Multilingual**: Support for Indonesian and English
 
 ---
 
