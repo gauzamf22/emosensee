@@ -10,6 +10,32 @@ import imgEmergency from "@/imports/Support/c17f0039912ca00b8476ed9dc75efc82ed81
 
 type QuickKey = "journaling" | "nearby" | "emergency";
 
+const CACHE_KEY = "emosense_mood_today";
+
+function getToday() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function loadCachedMood(): string | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.date === getToday()) return parsed.mood;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function saveCachedMood(mood: string | null) {
+  try {
+    if (mood) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ date: getToday(), mood }));
+    } else {
+      localStorage.removeItem(CACHE_KEY);
+    }
+  } catch { /* ignore */ }
+}
+
 export default function Home({
   onQuickOpen,
   onStartChat,
@@ -27,11 +53,10 @@ export default function Home({
     t = translation.t;
   } catch (error) {
     console.error('[Home] useTranslation error:', error);
-    // Fallback to empty translations
     t = {} as any;
   }
 
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(loadCachedMood);
   const [todayMood, setTodayMood] = useState<string | null>(null);
   const [loadingMood, setLoadingMood] = useState(true);
   const [insight, setInsight] = useState<DailyInsight | null>(null);
@@ -104,7 +129,7 @@ export default function Home({
       }
 
       try {
-        const dateLogged = new Date().toISOString().split('T')[0];
+        const dateLogged = getToday();
         console.log('[Home] fetchTodayMood: Fetching for date', dateLogged);
         
         const response = await apiClient.get('/api/moods', {
@@ -116,6 +141,7 @@ export default function Home({
           console.log('[Home] fetchTodayMood: Success', { mood: moodData.mood });
           setTodayMood(moodData.mood);
           setSelected(moodData.mood);
+          saveCachedMood(moodData.mood);
         } else {
           console.log('[Home] fetchTodayMood: No mood data found');
         }
@@ -174,6 +200,7 @@ export default function Home({
 
   const onMood = async (key: string, label: string) => {
     setSelected(key);
+    saveCachedMood(key);
     
     if (!session?.user?.id) {
       push({ source: "home", title: t.home.moodTracker.error, body: t.home.moodTracker.signInRequired });
@@ -181,7 +208,7 @@ export default function Home({
     }
 
     try {
-      const dateLogged = new Date().toISOString().split('T')[0];
+      const dateLogged = getToday();
       
       await apiClient.post('/api/moods', {
         mood: key,

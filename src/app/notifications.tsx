@@ -21,32 +21,66 @@ type Ctx = {
 
 const NotificationContext = createContext<Ctx | null>(null);
 
+const STORAGE_KEY = "emosense_notifications";
+
+function loadPersisted() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as { enabled: boolean; items: Notification[] };
+  } catch { /* ignore */ }
+  return null;
+}
+
+function persistState(enabled: boolean, items: Notification[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ enabled, items }));
+  } catch { /* ignore */ }
+}
+
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [enabled, setEnabled] = useState(false);
-  const [items, setItems] = useState<Notification[]>([]);
+  const saved = loadPersisted();
+  const [enabled, setEnabled] = useState(saved?.enabled ?? true);
+  const [items, setItems] = useState<Notification[]>(saved?.items ?? []);
+
+  const setEnabledAndPersist = useCallback((v: boolean) => {
+    setEnabled(v);
+    persistState(v, items);
+  }, [items]);
 
   const push = useCallback<Ctx["push"]>(
     (n) => {
       if (!enabled) return;
-      setItems((prev) => [
-        { ...n, id: Date.now() + Math.random(), time: Date.now(), read: false },
-        ...prev,
-      ].slice(0, 30));
+      setItems((prev) => {
+        const next = [
+          { ...n, id: Date.now() + Math.random(), time: Date.now(), read: false },
+          ...prev,
+        ].slice(0, 30);
+        persistState(enabled, next);
+        return next;
+      });
     },
     [enabled]
   );
 
   const markAllRead = useCallback(
-    () => setItems((prev) => prev.map((n) => ({ ...n, read: true }))),
-    []
+    () => setItems((prev) => {
+      const next = prev.map((n) => ({ ...n, read: true }));
+      persistState(enabled, next);
+      return next;
+    }),
+    [enabled]
   );
-  const clear = useCallback(() => setItems([]), []);
+
+  const clear = useCallback(() => {
+    setItems([]);
+    persistState(enabled, []);
+  }, [enabled]);
 
   const unread = items.filter((i) => !i.read).length;
 
   return (
     <NotificationContext.Provider
-      value={{ enabled, setEnabled, items, unread, push, markAllRead, clear }}
+      value={{ enabled, setEnabled: setEnabledAndPersist, items, unread, push, markAllRead, clear }}
     >
       {children}
     </NotificationContext.Provider>
